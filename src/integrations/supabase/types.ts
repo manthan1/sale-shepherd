@@ -14,7 +14,174 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          address: string | null
+          bank_account_holder: string | null
+          bank_account_no: string | null
+          bank_ifsc: string | null
+          bank_name: string | null
+          created_at: string
+          gstin: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          payment_qr_url: string | null
+          pdf_background_url: string | null
+          state: string | null
+          telegram_bot_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          bank_account_holder?: string | null
+          bank_account_no?: string | null
+          bank_ifsc?: string | null
+          bank_name?: string | null
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          payment_qr_url?: string | null
+          pdf_background_url?: string | null
+          state?: string | null
+          telegram_bot_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          bank_account_holder?: string | null
+          bank_account_no?: string | null
+          bank_ifsc?: string | null
+          bank_name?: string | null
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          payment_qr_url?: string | null
+          pdf_background_url?: string | null
+          state?: string | null
+          telegram_bot_token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      product_shortcuts: {
+        Row: {
+          company_id: string
+          created_at: string
+          full_name: string
+          id: string
+          shortcut_name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          full_name: string
+          id?: string
+          shortcut_name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          shortcut_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_shortcuts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          company_id: string
+          created_at: string
+          hsn_sac: string | null
+          id: string
+          name: string
+          rate: number
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          hsn_sac?: string | null
+          id?: string
+          name: string
+          rate: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          hsn_sac?: string | null
+          id?: string
+          name?: string
+          rate?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          company_id: string
+          created_at: string
+          email: string
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email: string
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
