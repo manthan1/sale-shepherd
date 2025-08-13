@@ -54,7 +54,9 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">Configure Settings</Button>
+              <Button className="w-full" onClick={() => navigate("/settings")}>
+                Configure Settings
+              </Button>
             </CardContent>
           </Card>
 
@@ -66,7 +68,9 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">Manage Products</Button>
+              <Button className="w-full" onClick={() => navigate("/products")}>
+                Manage Products
+              </Button>
             </CardContent>
           </Card>
 
@@ -78,7 +82,9 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">Manage Shortcuts</Button>
+              <Button className="w-full" onClick={() => navigate("/shortcuts")}>
+                Manage Shortcuts
+              </Button>
             </CardContent>
           </Card>
         </div>

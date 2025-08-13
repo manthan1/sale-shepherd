@@ -7,6 +7,9 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import CompanySettings from "./pages/CompanySettings";
+import ProductCatalog from "./pages/ProductCatalog";
+import ProductShortcuts from "./pages/ProductShortcuts";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +23,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/settings" element={<CompanySettings />} />
+            <Route path="/products" element={<ProductCatalog />} />
+            <Route path="/shortcuts" element={<ProductShortcuts />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
