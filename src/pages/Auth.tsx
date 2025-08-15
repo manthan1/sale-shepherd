@@ -63,49 +63,83 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signupEmail || !signupPassword || !companyName) return;
+    if (!signupEmail || !signupPassword || !companyName) {
+      toast({
+        title: "Error", 
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add basic password validation
+    if (signupPassword.length < 8) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 8 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
+    
     try {
-      // First create the company
-      const { data: companyData, error: companyError } = await supabase
-        .from("companies")
-        .insert({ name: companyName })
-        .select()
-        .single();
-
-      if (companyError) throw companyError;
-
-      // Then create the user
-      const { data, error } = await supabase.auth.signUp({
-        email: signupEmail,
+      // SECURITY FIX: Sign up user first with proper authentication
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: signupEmail.toLowerCase().trim(),
         password: signupPassword,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
 
-      if (data.user) {
-        // Create profile linking user to company
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert({
-            user_id: data.user.id,
-            company_id: companyData.id,
-            email: signupEmail,
-            role: "admin",
-          });
-
-        if (profileError) throw profileError;
-
-        toast({
-          title: "Success",
-          description: "Account created! Please check your email for verification.",
-        });
+      if (!authData.user) {
+        throw new Error("User creation failed");
       }
+
+      // Now create company with authenticated user context
+      const { data: companyData, error: companyError } = await supabase
+        .from("companies")
+        .insert({ name: companyName.trim() })
+        .select()
+        .single();
+
+      if (companyError) {
+        console.error("Company creation failed:", companyError);
+        throw new Error("Failed to create company");
+      }
+
+      // Create profile linking user to company
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          user_id: authData.user.id,
+          company_id: companyData.id,
+          email: signupEmail.toLowerCase().trim(),
+          role: "admin",
+        });
+
+      if (profileError) {
+        console.error("Profile creation failed:", profileError);
+        // Cleanup company on profile failure
+        await supabase.from("companies").delete().eq("id", companyData.id);
+        throw new Error("Failed to create user profile");
+      }
+
+      toast({
+        title: "Success",
+        description: "Account created! Please check your email for verification.",
+      });
+      
+      // Clear form
+      setSignupEmail("");
+      setSignupPassword("");
+      setCompanyName("");
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create account",
