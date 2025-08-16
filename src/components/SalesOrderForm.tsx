@@ -119,7 +119,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
       if (response.ok) {
         // Get PDF URL from response (if available)
         const result = await response.json();
-        const pdfUrl = result.url || null;
+        const pdfUrl = result.pdfUrl || null;
 
         // Save to database
         const { error: dbError } = await supabase
