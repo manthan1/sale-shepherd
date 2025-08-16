@@ -108,7 +108,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
       };
 
       // Send to webhook
-      const response = await fetch("https://n8n.srv898271.hstgr.cloud/webhook-test/bbd7cf14-90df-4946-8d2d-2de208c58b97", {
+      const response = await fetch("https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
