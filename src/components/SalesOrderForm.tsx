@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { X, FileText, Info } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface SalesOrderFormProps {
   open: boolean;
@@ -43,6 +44,7 @@ const FAKE_PRODUCTS = [
 const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [companyProfile, setCompanyProfile] = useState<any>(null);
   const [formData, setFormData] = useState<OrderFormData>({
@@ -139,7 +141,9 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
         toast({
           title: "Success",
-          description: "Sales order submitted successfully!",
+          description: isTrialMode 
+            ? "Trial sales order submitted successfully! Redirecting to your trial dashboard..." 
+            : "Sales order submitted successfully!",
         });
         
         // Reset form
@@ -151,6 +155,13 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           orderDetails: "",
         });
         onClose();
+        
+        // Redirect trial users to trial dashboard
+        if (isTrialMode) {
+          setTimeout(() => {
+            navigate('/trial-dashboard');
+          }, 1000);
+        }
       } else {
         throw new Error("Failed to submit order");
       }
