@@ -105,6 +105,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         orderDetails: formData.orderDetails.trim(),
         timestamp: new Date().toISOString(),
         isTrialMode,
+        company_id: isTrialMode ? null : companyProfile?.company_id || null,
+        isCompanyIdpresent: !isTrialMode && !!companyProfile?.company_id,
       };
 
       // Send to webhook
@@ -121,28 +123,30 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         const result = await response.json();
         const pdfUrl = result.pdfUrl || null;
 
-        // Save to database
-        const { error: dbError } = await supabase
-          .from('sales_orders')
-          .insert([{
-            company_id: isTrialMode ? null : companyProfile?.company_id,
-            customer_name: formData.customerName.trim(),
-            shipping_address: formData.shippingAddress.trim(),
-            state: formData.state.trim(),
-            contact_number: formData.contactNumber.trim(),
-            order_details: formData.orderDetails.trim(),
-            pdf_url: pdfUrl,
-            is_trial: isTrialMode,
-          }]);
+        // Only save to database for non-trial users
+        if (!isTrialMode) {
+          const { error: dbError } = await supabase
+            .from('sales_orders')
+            .insert([{
+              company_id: companyProfile?.company_id,
+              customer_name: formData.customerName.trim(),
+              shipping_address: formData.shippingAddress.trim(),
+              state: formData.state.trim(),
+              contact_number: formData.contactNumber.trim(),
+              order_details: formData.orderDetails.trim(),
+              pdf_url: pdfUrl,
+              is_trial: false,
+            }]);
 
-        if (dbError) {
-          console.error('Database error:', dbError);
+          if (dbError) {
+            console.error('Database error:', dbError);
+          }
         }
 
         toast({
           title: "Success",
           description: isTrialMode 
-            ? "Trial sales order submitted successfully! Redirecting to your trial dashboard..." 
+            ? "Sales order generated successfully!" 
             : "Sales order submitted successfully!",
         });
         
@@ -156,11 +160,11 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         });
         onClose();
         
-        // Redirect trial users to trial dashboard
-        if (isTrialMode) {
+        // For trial users, open PDF directly if available
+        if (isTrialMode && pdfUrl) {
           setTimeout(() => {
-            navigate('/trial-dashboard');
-          }, 1000);
+            window.open(pdfUrl, '_blank');
+          }, 500);
         }
       } else {
         throw new Error("Failed to submit order");
