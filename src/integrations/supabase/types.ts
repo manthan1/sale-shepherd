@@ -29,7 +29,7 @@ export type Database = {
           payment_qr_url: string | null
           pdf_background_url: string | null
           state: string | null
-          telegram_bot_token: string | null
+          telegram_chat_id: string | null
           updated_at: string
         }
         Insert: {
@@ -46,7 +46,7 @@ export type Database = {
           payment_qr_url?: string | null
           pdf_background_url?: string | null
           state?: string | null
-          telegram_bot_token?: string | null
+          telegram_chat_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -63,7 +63,7 @@ export type Database = {
           payment_qr_url?: string | null
           pdf_background_url?: string | null
           state?: string | null
-          telegram_bot_token?: string | null
+          telegram_chat_id?: string | null
           updated_at?: string
         }
         Relationships: []

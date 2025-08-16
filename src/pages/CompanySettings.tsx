@@ -24,7 +24,7 @@ interface CompanyData {
   logo_url: string | null;
   pdf_background_url: string | null;
   payment_qr_url: string | null;
-  telegram_bot_token: string | null;
+  telegram_chat_id: string | null;
 }
 
 const CompanySettings = () => {
@@ -87,19 +87,46 @@ const CompanySettings = () => {
   const handleSave = async () => {
     if (!companyData) return;
 
+    // Validate required fields
+    const requiredFields = {
+      name: companyData.name,
+      address: companyData.address,
+      gstin: companyData.gstin,
+      state: companyData.state,
+      bank_account_holder: companyData.bank_account_holder,
+      bank_name: companyData.bank_name,
+      bank_account_no: companyData.bank_account_no,
+      bank_ifsc: companyData.bank_ifsc,
+      telegram_chat_id: companyData.telegram_chat_id,
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => !value || value.trim() === '')
+      .map(([key, _]) => key.replace('_', ' ').toUpperCase());
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Missing Required Fields",
+        description: `Please fill in: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const { error } = await supabase
         .from('companies')
         .update({
-          address: companyData.address,
-          gstin: companyData.gstin,
-          state: companyData.state,
-          bank_account_holder: companyData.bank_account_holder,
-          bank_name: companyData.bank_name,
-          bank_account_no: companyData.bank_account_no,
-          bank_ifsc: companyData.bank_ifsc,
-          telegram_bot_token: companyData.telegram_bot_token,
+          name: companyData.name.trim(),
+          address: companyData.address?.trim(),
+          gstin: companyData.gstin?.trim(),
+          state: companyData.state?.trim(),
+          bank_account_holder: companyData.bank_account_holder?.trim(),
+          bank_name: companyData.bank_name?.trim(),
+          bank_account_no: companyData.bank_account_no?.trim(),
+          bank_ifsc: companyData.bank_ifsc?.trim(),
+          telegram_chat_id: companyData.telegram_chat_id?.trim(),
         })
         .eq('id', companyData.id);
 
@@ -179,41 +206,45 @@ const CompanySettings = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Company Name</Label>
+                  <Label htmlFor="name">Company Name *</Label>
                   <Input
                     id="name"
                     value={companyData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="gstin">GSTIN</Label>
+                  <Label htmlFor="gstin">GSTIN *</Label>
                   <Input
                     id="gstin"
                     value={companyData.gstin || ''}
                     onChange={(e) => handleInputChange('gstin', e.target.value)}
                     placeholder="Enter GSTIN"
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="state">State</Label>
+                  <Label htmlFor="state">State *</Label>
                   <Input
                     id="state"
                     value={companyData.state || ''}
                     onChange={(e) => handleInputChange('state', e.target.value)}
                     placeholder="Enter state"
+                    required
                   />
                 </div>
               </div>
               
               <div>
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">Address *</Label>
                 <Textarea
                   id="address"
                   value={companyData.address || ''}
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   placeholder="Enter company address"
                   rows={3}
+                  required
                 />
               </div>
 
@@ -221,39 +252,43 @@ const CompanySettings = () => {
                 <h3 className="text-lg font-medium mb-4">Bank Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="bank_account_holder">Account Holder</Label>
+                    <Label htmlFor="bank_account_holder">Account Holder *</Label>
                     <Input
                       id="bank_account_holder"
                       value={companyData.bank_account_holder || ''}
                       onChange={(e) => handleInputChange('bank_account_holder', e.target.value)}
                       placeholder="Enter account holder name"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="bank_name">Bank Name</Label>
+                    <Label htmlFor="bank_name">Bank Name *</Label>
                     <Input
                       id="bank_name"
                       value={companyData.bank_name || ''}
                       onChange={(e) => handleInputChange('bank_name', e.target.value)}
                       placeholder="Enter bank name"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="bank_account_no">Account Number</Label>
+                    <Label htmlFor="bank_account_no">Account Number *</Label>
                     <Input
                       id="bank_account_no"
                       value={companyData.bank_account_no || ''}
                       onChange={(e) => handleInputChange('bank_account_no', e.target.value)}
                       placeholder="Enter account number"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="bank_ifsc">IFSC Code</Label>
+                    <Label htmlFor="bank_ifsc">IFSC Code *</Label>
                     <Input
                       id="bank_ifsc"
                       value={companyData.bank_ifsc || ''}
                       onChange={(e) => handleInputChange('bank_ifsc', e.target.value)}
                       placeholder="Enter IFSC code"
+                      required
                     />
                   </div>
                 </div>
@@ -312,13 +347,13 @@ const CompanySettings = () => {
             </CardHeader>
             <CardContent>
               <div>
-                <Label htmlFor="telegram_bot_token">Telegram Bot API Token</Label>
+                <Label htmlFor="telegram_chat_id">Telegram Chat ID *</Label>
                 <Input
-                  id="telegram_bot_token"
-                  type="password"
-                  value={companyData.telegram_bot_token || ''}
-                  onChange={(e) => handleInputChange('telegram_bot_token', e.target.value)}
-                  placeholder="Enter Telegram Bot API Token"
+                  id="telegram_chat_id"
+                  value={companyData.telegram_chat_id || ''}
+                  onChange={(e) => handleInputChange('telegram_chat_id', e.target.value)}
+                  placeholder="Enter Telegram Chat ID"
+                  required
                 />
               </div>
             </CardContent>
