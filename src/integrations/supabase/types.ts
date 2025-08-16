@@ -182,6 +182,56 @@ export type Database = {
           },
         ]
       }
+      sales_orders: {
+        Row: {
+          company_id: string | null
+          contact_number: string | null
+          created_at: string
+          customer_name: string
+          id: string
+          is_trial: boolean | null
+          order_details: string
+          pdf_url: string | null
+          shipping_address: string | null
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          contact_number?: string | null
+          created_at?: string
+          customer_name: string
+          id?: string
+          is_trial?: boolean | null
+          order_details: string
+          pdf_url?: string | null
+          shipping_address?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          contact_number?: string | null
+          created_at?: string
+          customer_name?: string
+          id?: string
+          is_trial?: boolean | null
+          order_details?: string
+          pdf_url?: string | null
+          shipping_address?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
