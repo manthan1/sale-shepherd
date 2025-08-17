@@ -80,8 +80,8 @@ const ProductCatalog = () => {
     try {
       const rawData = await parseExcelFile(file);
 
-      console.log("--- Raw Data From Excel ---");
-      console.log(rawData);
+      // console.log("--- Raw Data From Excel ---");
+      // console.log(rawData);
       // Also log the first row to inspect its keys
       if (rawData.length > 0) {
         console.log("--- Keys of the first row ---");
