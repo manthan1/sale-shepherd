@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, FileText, Package, Zap, LogOut, AlertCircle, Eye, Users } from "lucide-react";
+import { Settings, FileText, Package, Zap, LogOut, AlertCircle, Eye, Users, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SalesOrderForm from "@/components/SalesOrderForm";
 
@@ -14,6 +15,7 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isCompanyRegistered, setIsCompanyRegistered] = useState(false);
+  const [hasCompanyRecord, setHasCompanyRecord] = useState(false);
   const [checkingCompany, setCheckingCompany] = useState(true);
   const [showSalesOrderForm, setShowSalesOrderForm] = useState(false);
   const [showTrialForm, setShowTrialForm] = useState(false);
@@ -35,6 +37,8 @@ const Index = () => {
         .single();
 
       if (profile?.company_id) {
+        setHasCompanyRecord(true);
+        
         const { data: company } = await supabase
           .from('companies')
           .select('name, address, gstin, state, bank_account_holder, bank_name, bank_account_no, bank_ifsc, telegram_chat_id')
@@ -58,6 +62,9 @@ const Index = () => {
           const allFieldsFilled = requiredFields.every(field => field && field.trim() !== '');
           setIsCompanyRegistered(allFieldsFilled);
         }
+      } else {
+        setHasCompanyRecord(false);
+        setIsCompanyRegistered(false);
       }
     } catch (error) {
       console.error("Error checking company registration:", error);
@@ -70,7 +77,7 @@ const Index = () => {
     if (!isCompanyRegistered) {
       toast({
         title: "Company Registration Required",
-        description: "Please register the company first before generating sales orders.",
+        description: "Please complete your company registration first before generating sales orders.",
         variant: "destructive",
       });
       return;
@@ -162,7 +169,10 @@ const Index = () => {
                     Company Settings
                   </CardTitle>
                   <CardDescription>
-                    Configure your company details and preferences
+                    {hasCompanyRecord 
+                      ? "Configure your company details and preferences" 
+                      : "Add your company details to get started"
+                    }
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -170,7 +180,17 @@ const Index = () => {
                     onClick={() => navigate("/company-settings")} 
                     className="w-full"
                   >
-                    Manage Settings
+                    {hasCompanyRecord ? (
+                      <>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Manage Settings
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Company Details
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
