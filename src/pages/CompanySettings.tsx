@@ -182,13 +182,28 @@ const CompanySettings = () => {
 
         if (companyError) throw companyError;
 
-        // Update user profile with new company_id
-        const { error: profileError } = await supabase
+        // Update user profile with new company_id or create if doesn't exist
+        const { data: updatedProfile, error: profileError } = await supabase
           .from('profiles')
           .update({ company_id: newCompany.id })
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .select();
 
         if (profileError) throw profileError;
+
+        // If no profile was updated (doesn't exist), create a new one
+        if (!updatedProfile || updatedProfile.length === 0) {
+          const { error: createProfileError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: user.id,
+              email: user.email || '',
+              company_id: newCompany.id,
+              role: 'admin'
+            });
+
+          if (createProfileError) throw createProfileError;
+        }
 
         // Update local state
         setCompanyData(newCompany);
