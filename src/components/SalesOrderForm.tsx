@@ -96,27 +96,47 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
     setIsSubmitting(true);
     try {
+
+      const webhookUrl = isTrialMode
+        ? "https://n8n.srv898271.hstgr.cloud/webhook/7ed8b450-cdfd-4767-8ed3-3a5f1d225fc3" // Trial form submission webhook
+        : "https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97"; // Logged-in user webhook
+      
       // Prepare order data
       const orderData = {
-        customerName: formData.customerName.trim(),
-        shippingAddress: formData.shippingAddress.trim(),
-        state: formData.state.trim(),
-        contactNumber: formData.contactNumber.trim(),
-        orderDetails: formData.orderDetails.trim(),
+        ...formData, // This will include all fields, even if blank
         timestamp: new Date().toISOString(),
         isTrialMode,
         company_id: isTrialMode ? null : companyProfile?.company_id || null,
         isCompanyIdpresent: !isTrialMode && !!companyProfile?.company_id,
+        user: user ? user.email : "anonymous",
       };
+      // const orderData = {
+      //   customerName: formData.customerName.trim(),
+      //   shippingAddress: formData.shippingAddress.trim(),
+      //   state: formData.state.trim(),
+      //   contactNumber: formData.contactNumber.trim(),
+      //   orderDetails: formData.orderDetails.trim(),
+      //   timestamp: new Date().toISOString(),
+      //   isTrialMode,
+      //   company_id: isTrialMode ? null : companyProfile?.company_id || null,
+      //   isCompanyIdpresent: !isTrialMode && !!companyProfile?.company_id,
+      // };
 
       // Send to webhook
-      const response = await fetch("https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97", {
+      const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(orderData),
       });
+      // const response = await fetch("https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify(orderData),
+      // });
 
       // Get response data (if available)
       const result = await response.json();
