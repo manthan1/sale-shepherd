@@ -34,6 +34,7 @@ const CompanySettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
+  const [isCreateMode, setIsCreateMode] = useState(false);
 
   useEffect(() => {
     fetchCompanyData();
@@ -50,6 +51,7 @@ const CompanySettings = () => {
         .single();
 
       if (profile?.company_id) {
+        // User has company_id, try to fetch company data
         const { data: company } = await supabase
           .from('companies')
           .select('*')
@@ -58,17 +60,40 @@ const CompanySettings = () => {
 
         if (company) {
           setCompanyData(company);
+          setIsCreateMode(false);
+        } else {
+          // Company record doesn't exist, but profile has company_id - this shouldn't happen
+          initializeEmptyCompanyData();
         }
+      } else {
+        // No company_id in profile, user needs to create company
+        initializeEmptyCompanyData();
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load company data",
-        variant: "destructive",
-      });
+      // Error fetching data, but user might still need to create company
+      initializeEmptyCompanyData();
     } finally {
       setLoading(false);
     }
+  };
+
+  const initializeEmptyCompanyData = () => {
+    setCompanyData({
+      id: '', // Will be generated during creation
+      name: '',
+      address: '',
+      gstin: '',
+      state: '',
+      bank_account_holder: '',
+      bank_name: '',
+      bank_account_no: '',
+      bank_ifsc: '',
+      logo_url: null,
+      pdf_background_url: null,
+      payment_qr_url: null,
+      telegram_chat_id: '',
+    });
+    setIsCreateMode(true);
   };
 
   const handleInputChange = (field: keyof CompanyData, value: string) => {
@@ -85,7 +110,7 @@ const CompanySettings = () => {
   };
 
   const handleSave = async () => {
-    if (!companyData) return;
+    if (!companyData || !user) return;
 
     // Validate required fields
     const requiredFields = {
@@ -115,31 +140,70 @@ const CompanySettings = () => {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('companies')
-        .update({
-          name: companyData.name.trim(),
-          address: companyData.address?.trim(),
-          gstin: companyData.gstin?.trim(),
-          state: companyData.state?.trim(),
-          bank_account_holder: companyData.bank_account_holder?.trim(),
-          bank_name: companyData.bank_name?.trim(),
-          bank_account_no: companyData.bank_account_no?.trim(),
-          bank_ifsc: companyData.bank_ifsc?.trim(),
-          telegram_chat_id: companyData.telegram_chat_id?.trim(),
-        })
-        .eq('id', companyData.id);
+      if (isCreateMode) {
+        // Create new company
+        const { data: newCompany, error: companyError } = await supabase
+          .from('companies')
+          .insert({
+            name: companyData.name.trim(),
+            address: companyData.address?.trim(),
+            gstin: companyData.gstin?.trim(),
+            state: companyData.state?.trim(),
+            bank_account_holder: companyData.bank_account_holder?.trim(),
+            bank_name: companyData.bank_name?.trim(),
+            bank_account_no: companyData.bank_account_no?.trim(),
+            bank_ifsc: companyData.bank_ifsc?.trim(),
+            telegram_chat_id: companyData.telegram_chat_id?.trim(),
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (companyError) throw companyError;
 
-      toast({
-        title: "Success",
-        description: "Company settings saved successfully",
-      });
+        // Update user profile with new company_id
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ company_id: newCompany.id })
+          .eq('user_id', user.id);
+
+        if (profileError) throw profileError;
+
+        // Update local state
+        setCompanyData(newCompany);
+        setIsCreateMode(false);
+
+        toast({
+          title: "Success",
+          description: "Company details created successfully",
+        });
+      } else {
+        // Update existing company
+        const { error } = await supabase
+          .from('companies')
+          .update({
+            name: companyData.name.trim(),
+            address: companyData.address?.trim(),
+            gstin: companyData.gstin?.trim(),
+            state: companyData.state?.trim(),
+            bank_account_holder: companyData.bank_account_holder?.trim(),
+            bank_name: companyData.bank_name?.trim(),
+            bank_account_no: companyData.bank_account_no?.trim(),
+            bank_ifsc: companyData.bank_ifsc?.trim(),
+            telegram_chat_id: companyData.telegram_chat_id?.trim(),
+          })
+          .eq('id', companyData.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Company settings updated successfully",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to save company settings",
+        description: isCreateMode ? "Failed to create company details" : "Failed to update company settings",
         variant: "destructive",
       });
     } finally {
@@ -161,7 +225,7 @@ const CompanySettings = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <p className="text-lg text-muted-foreground">Company data not found</p>
+          <p className="text-lg">Unable to load company data</p>
           <Button onClick={() => navigate("/")} className="mt-4">
             Go Back
           </Button>
@@ -180,11 +244,13 @@ const CompanySettings = () => {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
-              <h1 className="text-2xl font-bold">Company Settings</h1>
+              <h1 className="text-2xl font-bold">
+                {isCreateMode ? "Add Company Details" : "Company Settings"}
+              </h1>
             </div>
             <Button onClick={handleSave} disabled={saving}>
               <Save className="w-4 h-4 mr-2" />
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? "Saving..." : isCreateMode ? "Create Company" : "Save Changes"}
             </Button>
           </div>
         </div>
@@ -200,7 +266,10 @@ const CompanySettings = () => {
                 Company Details
               </CardTitle>
               <CardDescription>
-                Update your company information and bank details
+                {isCreateMode 
+                  ? "Enter your company information and bank details to get started" 
+                  : "Update your company information and bank details"
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
