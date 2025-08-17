@@ -170,7 +170,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         throw new Error("Failed to submit order");
       }
     } catch (error) {
-      console.error("Order submission error:", error);
+      // console.error("Order submission error:", error);
+      console.log(error.message);
       toast({
         title: "Error",
         // description: "Failed to submit sales order. Please try again.",
