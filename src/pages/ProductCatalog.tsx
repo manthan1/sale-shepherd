@@ -79,6 +79,15 @@ const ProductCatalog = () => {
     setImporting(true);
     try {
       const rawData = await parseExcelFile(file);
+
+      console.log("--- Raw Data From Excel ---");
+      console.log(rawData);
+      // Also log the first row to inspect its keys
+      if (rawData.length > 0) {
+        console.log("--- Keys of the first row ---");
+        console.log(Object.keys(rawData[0]));
+      }
+      
       const validatedData = validateProductData(rawData);
 
       if (validatedData.length === 0) {
