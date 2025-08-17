@@ -35,14 +35,29 @@ export const parseExcelFile = async <T>(file: File): Promise<T[]> => {
 };
 
 export const validateProductData = (data: any[]): ProductRow[] => {
-  return data.filter(row => {
-    return (
-      row['Product Name'] &&
-      typeof row['Rate'] === 'number' &&
-      row['HSN/SAC'] &&
-      row['Unit']
-    );
-  });
+  const validRows: ProductRow[] = [];
+
+  for (const row of data) {
+    const name = row['Product Name']?.toString().trim();
+    const rateString = row['Rate']?.toString();
+    const hsn = row['HSN/SAC']?.toString().trim();
+    const unit = row['Unit']?.toString().trim();
+
+    // Try to convert the rate to a number
+    const rate = parseFloat(rateString);
+
+    // Now, validate the cleaned and parsed data
+    if (name && !isNaN(rate) && hsn && unit) {
+      validRows.push({
+        'Product Name': name,
+        'Rate': rate, // We now have a guaranteed number
+        'HSN/SAC': hsn,
+        'Unit': unit,
+      });
+    }
+  }
+  
+  return validRows;
 };
 
 export const validateShortcutData = (data: any[]): ShortcutRow[] => {
