@@ -173,7 +173,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
       console.error("Order submission error:", error);
       toast({
         title: "Error",
-        description: "Failed to submit sales order. Please try again.",
+        // description: "Failed to submit sales order. Please try again.",
+        description : error.message,
         variant: "destructive",
       });
     } finally {
