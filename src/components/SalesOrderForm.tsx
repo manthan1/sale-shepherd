@@ -118,16 +118,16 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         body: JSON.stringify(orderData),
       });
 
-      if (response.ok) {
-        // Get PDF URL from response (if available)
-        const result = await response.json();
-        
-        // Check if there's an error in the response
-        if (result.error) {
-          console.log("Error Message : ", result.error);
-          throw new Error(result.error);
-        }
+      // Get response data (if available)
+      const result = await response.json();
       
+      // Check if there's an error in the response
+      if (result.error) {
+        console.log("Error Message : ", result.error);
+        throw new Error(result.error);
+      }
+
+      if (response.ok) {
         const pdfUrl = result.pdfUrl || null;
 
         // Only save to database for non-trial users
