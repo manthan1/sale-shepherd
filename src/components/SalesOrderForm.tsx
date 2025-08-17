@@ -124,9 +124,10 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         
         // Check if there's an error in the response
         if (result.error) {
+          console.log("Error Message : ", result.error);
           throw new Error(result.error);
         }
-        
+      
         const pdfUrl = result.pdfUrl || null;
 
         // Only save to database for non-trial users
