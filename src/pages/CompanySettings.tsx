@@ -226,9 +226,10 @@ const CompanySettings = () => {
         });
       }
     } catch (error) {
+      console.error('Company operation error:', error);
       toast({
         title: "Error",
-        description: isCreateMode ? "Failed to create company details" : "Failed to update company settings",
+        description: error instanceof Error ? error.message : (isCreateMode ? "Failed to create company details" : "Failed to update company settings"),
         variant: "destructive",
       });
     } finally {
