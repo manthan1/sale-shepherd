@@ -201,6 +201,11 @@ const CompanySettings = () => {
           title: "Success",
           description: "Company details created successfully",
         });
+
+        // Navigate back to home to refresh company registration status
+        setTimeout(() => {
+          navigate("/");
+        }, 1000);
       } else {
         // Update existing company
         const { error } = await supabase
@@ -224,6 +229,11 @@ const CompanySettings = () => {
           title: "Success",
           description: "Company settings updated successfully",
         });
+
+        // Navigate back to home to refresh company registration status
+        setTimeout(() => {
+          navigate("/");
+        }, 1000);
       }
     } catch (error) {
       console.error('Company operation error:', error);
