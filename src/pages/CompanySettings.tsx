@@ -40,6 +40,28 @@ const CompanySettings = () => {
     fetchCompanyData();
   }, [user]);
 
+  // Autosave draft to localStorage
+  useEffect(() => {
+    if (companyData && isCreateMode) {
+      localStorage.setItem('companyDraft', JSON.stringify(companyData));
+    }
+  }, [companyData, isCreateMode]);
+
+  // Load draft from localStorage on mount for create mode
+  useEffect(() => {
+    if (isCreateMode && companyData && companyData.name === '') {
+      const draft = localStorage.getItem('companyDraft');
+      if (draft) {
+        try {
+          const parsedDraft = JSON.parse(draft);
+          setCompanyData(parsedDraft);
+        } catch (error) {
+          // Invalid draft, ignore
+        }
+      }
+    }
+  }, [isCreateMode]);
+
   const fetchCompanyData = async () => {
     if (!user) return;
 
@@ -171,6 +193,9 @@ const CompanySettings = () => {
         // Update local state
         setCompanyData(newCompany);
         setIsCreateMode(false);
+
+        // Clear draft from localStorage after successful creation
+        localStorage.removeItem('companyDraft');
 
         toast({
           title: "Success",
