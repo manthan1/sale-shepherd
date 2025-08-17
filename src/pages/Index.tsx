@@ -85,6 +85,28 @@ const Index = () => {
     setShowSalesOrderForm(true);
   };
 
+  const handleTryNow = async () => {
+    try {
+      // Send POST request to webhook
+      await fetch("https://n8n.srv898271.hstgr.cloud/webhook/7ed8b450-cdfd-4767-8ed3-3a5f1d225fc3", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "try_now_clicked",
+          timestamp: new Date().toISOString(),
+          user: user ? user.email : "anonymous"
+        })
+      });
+    } catch (error) {
+      console.error("Error sending webhook request:", error);
+    }
+    
+    // Open trial form
+    setShowTrialForm(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -291,7 +313,7 @@ const Index = () => {
               </div>
 
               <Button 
-                onClick={() => setShowTrialForm(true)} 
+                onClick={handleTryNow} 
                 variant="outline"
                 className="w-full"
               >
