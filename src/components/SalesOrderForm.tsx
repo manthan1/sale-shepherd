@@ -121,6 +121,12 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
       if (response.ok) {
         // Get PDF URL from response (if available)
         const result = await response.json();
+        
+        // Check if there's an error in the response
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        
         const pdfUrl = result.pdfUrl || null;
 
         // Only save to database for non-trial users
