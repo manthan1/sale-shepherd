@@ -85,7 +85,7 @@ const Index = () => {
     setShowSalesOrderForm(true);
   };
 
-  const handleTryNow = async () => {
+  const handleTryNow = async (formData) => {
     try {
       // Send POST request to webhook
       await fetch("https://n8n.srv898271.hstgr.cloud/webhook/7ed8b450-cdfd-4767-8ed3-3a5f1d225fc3", {
@@ -94,6 +94,7 @@ const Index = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          ...formData,
           action: "try_now_clicked",
           timestamp: new Date().toISOString(),
           user: user ? user.email : "anonymous"
