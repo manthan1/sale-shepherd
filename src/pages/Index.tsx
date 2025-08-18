@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Settings, FileText, Package, Zap, LogOut, AlertCircle, Eye, Users, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SalesOrderForm from "@/components/SalesOrderForm";
+import HeroSection from "@/components/HeroSection";
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
@@ -284,46 +285,10 @@ const Index = () => {
           </main>
         </div>
       ) : (
-        // Show login/signup form for non-authenticated users
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center px-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle className="text-2xl text-center">Welcome to Sales Order Generator</CardTitle>
-              <CardDescription className="text-center">
-                Generate professional sales orders instantly
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button 
-                onClick={() => navigate("/auth")} 
-                className="w-full"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Sign In / Sign Up
-              </Button>
-              
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or try it first
-                  </span>
-                </div>
-              </div>
-
-              <Button 
-                onClick={handleTryNow} 
-                variant="outline"
-                className="w-full"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Try Now (No Registration)
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <HeroSection
+          onTryNow={handleTryNow}
+          onNavigate={navigate}
+        />
       )}
 
       <SalesOrderForm 

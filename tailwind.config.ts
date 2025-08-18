@@ -18,7 +18,14 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
 			colors: {
+        'brand-dark': 'hsl(var(--brand-dark))',
+        'brand-violet': 'hsl(var(--brand-violet))',
+        'brand-gray-light': 'hsl(var(--brand-gray-light))',
+        'brand-gray-medium': 'hsl(var(--brand-gray-medium))',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
