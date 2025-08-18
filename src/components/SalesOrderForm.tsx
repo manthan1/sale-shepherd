@@ -187,18 +187,37 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         });
         onClose();
         
-        // Download PDF for both trial and logged-in users if available
+        // Auto-download PDF for both trial and logged-in users
         if (pdfUrl) {
           setTimeout(() => {
-            // Create a temporary download link
-            const link = document.createElement('a');
-            link.href = pdfUrl;
-            link.download = `sales_order_${formData.customerName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }, 500);
+            try {
+              // Create a temporary download link
+              const link = document.createElement('a');
+              link.href = pdfUrl;
+              const sanitizedCustomerName = formData.customerName.replace(/[^a-zA-Z0-9]/g, '_');
+              const dateString = new Date().toISOString().split('T')[0];
+              link.download = `sales_order_${sanitizedCustomerName}_${dateString}.pdf`;
+              link.style.display = 'none';
+              
+              // Add to DOM, click, and remove
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              
+              toast({
+                title: "PDF Downloaded",
+                description: "Sales order PDF has been downloaded to your device.",
+              });
+            } catch (error) {
+              console.error('PDF download error:', error);
+              // Fallback: open in new tab
+              window.open(pdfUrl, '_blank');
+              toast({
+                title: "PDF Available",
+                description: "PDF opened in new tab. You can download it from there.",
+              });
+            }
+          }, 1000);
         }
       } else {
         throw new Error("Failed to submit order");
