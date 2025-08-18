@@ -27,6 +27,9 @@ interface CompanyData {
   telegram_chat_id: string | null;
 }
 
+// Add this type definition
+type UploadableField = 'logo_url' | 'pdf_background_url' | 'payment_qr_url';
+
 const CompanySettings = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -35,6 +38,9 @@ const CompanySettings = () => {
   const [saving, setSaving] = useState(false);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [isCreateMode, setIsCreateMode] = useState(false);
+
+  // --- ADD THIS LINE ---
+  const [uploadingField, setUploadingField] = useState<UploadableField | null>(null);
 
   useEffect(() => {
     fetchCompanyData();
@@ -123,13 +129,64 @@ const CompanySettings = () => {
     setCompanyData(prev => prev ? { ...prev, [field]: value } : null);
   };
 
-  const handleFileUpload = async (file: File, field: 'logo_url' | 'pdf_background_url' | 'payment_qr_url') => {
-    // For now, we'll just show a message that file upload needs storage setup
-    toast({
-      title: "File Upload",
-      description: "File upload functionality requires storage setup. Coming soon!",
-    });
-  };
+  // const handleFileUpload = async (file: File, field: 'logo_url' | 'pdf_background_url' | 'payment_qr_url') => {
+  //   // For now, we'll just show a message that file upload needs storage setup
+  //   toast({
+  //     title: "File Upload",
+  //     description: "File upload functionality requires storage setup. Coming soon!",
+  //   });
+  // };
+
+
+  const handleFileUpload = async (file: File, field: UploadableField) => {
+    if (!user) {
+      toast({ title: "Authentication Error", description: "You must be logged in to upload files.", variant: "destructive" });
+      return;
+    }
+
+    setUploadingField(field); // Start loading state for this specific field
+    try {
+      const bucketName = 'company_assets'; // The bucket name you created in Supabase
+      // Create a unique file path: user_id/field_name/timestamp-filename.png
+      const filePath = `${user.id}/${field}/${Date.now()}-${file.name}`;
+
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get the public URL of the uploaded file
+      const { data } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+
+      if (!data || !data.publicUrl) {
+        throw new Error("Could not get public URL for the uploaded file.");
+      }
+      
+      // Update the component's state with the new URL
+      setCompanyData(prev => prev ? { ...prev, [field]: data.publicUrl } : null);
+
+      toast({
+        title: "Upload Successful",
+        description: `${field.replace('_url', '').replace('_', ' ')} has been uploaded.`,
+      });
+
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred during upload.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingField(null); // Stop loading state
+    }
+};
 
   const handleSave = async () => {
     if (!companyData || !user) return;
@@ -162,23 +219,50 @@ const CompanySettings = () => {
 
     setSaving(true);
     try {
+
+      const dataToSave = {
+      name: companyData.name.trim(),
+      address: companyData.address?.trim(),
+      gstin: companyData.gstin?.trim(),
+      state: companyData.state?.trim(),
+      bank_account_holder: companyData.bank_account_holder?.trim(),
+      bank_name: companyData.bank_name?.trim(),
+      bank_account_no: companyData.bank_account_no?.trim(),
+      bank_ifsc: companyData.bank_ifsc?.trim(),
+      telegram_chat_id: companyData.telegram_chat_id?.trim(),
+      // --- ADD THESE LINES TO INCLUDE IMAGE URLs ---
+      logo_url: companyData.logo_url,
+      pdf_background_url: companyData.pdf_background_url,
+      payment_qr_url: companyData.payment_qr_url,
+  };
+
+      
       if (isCreateMode) {
+
+          // Create new company
+      const { data: newCompany, error: companyError } = await supabase
+        .from('companies')
+        .insert(dataToSave) // --- USE THE dataToSave OBJECT ---
+        .select()
+        .single();
+        
         // Create new company
-        const { data: newCompany, error: companyError } = await supabase
-          .from('companies')
-          .insert({
-            name: companyData.name.trim(),
-            address: companyData.address?.trim(),
-            gstin: companyData.gstin?.trim(),
-            state: companyData.state?.trim(),
-            bank_account_holder: companyData.bank_account_holder?.trim(),
-            bank_name: companyData.bank_name?.trim(),
-            bank_account_no: companyData.bank_account_no?.trim(),
-            bank_ifsc: companyData.bank_ifsc?.trim(),
-            telegram_chat_id: companyData.telegram_chat_id?.trim(),
-          })
-          .select()
-          .single();
+        // const { data: newCompany, error: companyError } = await supabase
+        //   .from('companies')
+        //   .insert({
+        //     name: companyData.name.trim(),
+        //     address: companyData.address?.trim(),
+        //     gstin: companyData.gstin?.trim(),
+        //     state: companyData.state?.trim(),
+        //     bank_account_holder: companyData.bank_account_holder?.trim(),
+        //     bank_name: companyData.bank_name?.trim(),
+        //     bank_account_no: companyData.bank_account_no?.trim(),
+        //     bank_ifsc: companyData.bank_ifsc?.trim(),
+        //     telegram_chat_id: companyData.telegram_chat_id?.trim(),
+
+        //   })
+        //   .select()
+        //   .single();
 
         if (companyError) throw companyError;
 
@@ -222,21 +306,27 @@ const CompanySettings = () => {
           navigate("/");
         }, 1000);
       } else {
-        // Update existing company
+
         const { error } = await supabase
-          .from('companies')
-          .update({
-            name: companyData.name.trim(),
-            address: companyData.address?.trim(),
-            gstin: companyData.gstin?.trim(),
-            state: companyData.state?.trim(),
-            bank_account_holder: companyData.bank_account_holder?.trim(),
-            bank_name: companyData.bank_name?.trim(),
-            bank_account_no: companyData.bank_account_no?.trim(),
-            bank_ifsc: companyData.bank_ifsc?.trim(),
-            telegram_chat_id: companyData.telegram_chat_id?.trim(),
-          })
-          .eq('id', companyData.id);
+        .from('companies')
+        .update(dataToSave) // --- USE THE dataToSave OBJECT ---
+        .eq('id', companyData.id);
+        
+        // Update existing company
+        // const { error } = await supabase
+        //   .from('companies')
+        //   .update({
+        //     name: companyData.name.trim(),
+        //     address: companyData.address?.trim(),
+        //     gstin: companyData.gstin?.trim(),
+        //     state: companyData.state?.trim(),
+        //     bank_account_holder: companyData.bank_account_holder?.trim(),
+        //     bank_name: companyData.bank_name?.trim(),
+        //     bank_account_no: companyData.bank_account_no?.trim(),
+        //     bank_ifsc: companyData.bank_ifsc?.trim(),
+        //     telegram_chat_id: companyData.telegram_chat_id?.trim(),
+        //   })
+        //   .eq('id', companyData.id);
 
         if (error) throw error;
 
@@ -434,6 +524,11 @@ const CompanySettings = () => {
                 accept="image/*"
                 onFileSelect={(file) => handleFileUpload(file, 'logo_url')}
                 buttonText="Upload Logo"
+
+                // --- ADD THESE PROPS ---
+                currentImageUrl={companyData.logo_url}
+                isUploading={uploadingField === 'logo_url'}
+                
               />
 
               <FileUpload
@@ -442,6 +537,11 @@ const CompanySettings = () => {
                 accept="image/*"
                 onFileSelect={(file) => handleFileUpload(file, 'pdf_background_url')}
                 buttonText="Upload Background"
+
+                 // --- ADD THESE PROPS ---
+                currentImageUrl={companyData.pdf_background_url}
+                isUploading={uploadingField === 'pdf_background_url'}
+                
               />
 
               <FileUpload
@@ -450,6 +550,11 @@ const CompanySettings = () => {
                 accept="image/*"
                 onFileSelect={(file) => handleFileUpload(file, 'payment_qr_url')}
                 buttonText="Upload QR Code"
+
+                 // --- ADD THESE PROPS ---
+                currentImageUrl={companyData.payment_qr_url}
+                isUploading={uploadingField === 'payment_qr_url'}
+                
               />
             </CardContent>
           </Card>
