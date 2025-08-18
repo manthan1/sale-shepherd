@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileUpload } from "@/components/FileUpload";
+import { ExcelUpload } from "@/components/FileUpload";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Zap, Trash2, Plus, Edit } from "lucide-react";
@@ -264,13 +264,10 @@ const ProductShortcuts = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <FileUpload
+              <ExcelUpload
                 label="Shortcuts Excel File"
                 description="Excel file with Full Product Name, Shortcut Name columns"
-                accept=".xlsx,.xls"
-                buttonText="Upload Excel File"
                 onFileSelect={handleExcelImport}
-                isUploading={importing}
               />
               {importing && (
                 <div className="mt-4 text-sm text-muted-foreground">
