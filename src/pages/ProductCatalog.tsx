@@ -7,8 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ExcelUpload } from "@/components/FileUpload";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Package, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, Trash2, Plus, Edit } from "lucide-react";
 import { parseExcelFile, validateProductData, ProductRow } from "@/utils/excel";
+import ProductForm, { ProductFormData } from "@/components/ProductForm";
 
 interface Product {
   id: string;
@@ -27,6 +28,8 @@ const ProductCatalog = () => {
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductFormData | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -155,6 +158,83 @@ const ProductCatalog = () => {
     }
   };
 
+  const handleSaveProduct = async (productData: ProductFormData) => {
+    if (!companyId) {
+      toast({
+        title: "Error",
+        description: "Company not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (editingProduct?.id) {
+        // Update existing product
+        const { error } = await supabase
+          .from('products')
+          .update({
+            name: productData.name,
+            rate: productData.rate,
+            hsn_sac: productData.hsn_sac || null,
+            unit: productData.unit || null,
+          })
+          .eq('id', editingProduct.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Product updated successfully",
+        });
+      } else {
+        // Create new product
+        const { error } = await supabase
+          .from('products')
+          .insert([{
+            company_id: companyId,
+            name: productData.name,
+            rate: productData.rate,
+            hsn_sac: productData.hsn_sac || null,
+            unit: productData.unit || null,
+          }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Product added successfully",
+        });
+      }
+
+      fetchProducts(); // Refresh the list
+      setShowProductForm(false);
+      setEditingProduct(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: editingProduct ? "Failed to update product" : "Failed to add product",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct({
+      id: product.id,
+      name: product.name,
+      rate: product.rate,
+      hsn_sac: product.hsn_sac || "",
+      unit: product.unit || "",
+    });
+    setShowProductForm(true);
+  };
+
+  const handleAddProduct = () => {
+    setEditingProduct(null);
+    setShowProductForm(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -189,10 +269,18 @@ const ProductCatalog = () => {
           {/* Import Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Import Products</CardTitle>
-              <CardDescription>
-                Upload an Excel file with columns: Product Name, Rate, HSN/SAC, Unit
-              </CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Add Products</CardTitle>
+                  <CardDescription>
+                    Add individual products or upload an Excel file with columns: Product Name, Rate, HSN/SAC, Unit
+                  </CardDescription>
+                </div>
+                <Button onClick={handleAddProduct}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Product
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <ExcelUpload
@@ -241,13 +329,22 @@ const ProductCatalog = () => {
                           <TableCell>{product.hsn_sac || "-"}</TableCell>
                           <TableCell>{product.unit || "-"}</TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteProduct(product.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditProduct(product)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteProduct(product.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -259,6 +356,16 @@ const ProductCatalog = () => {
           </Card>
         </div>
       </main>
+
+      <ProductForm
+        open={showProductForm}
+        onClose={() => {
+          setShowProductForm(false);
+          setEditingProduct(null);
+        }}
+        onSave={handleSaveProduct}
+        product={editingProduct}
+      />
     </div>
   );
 };

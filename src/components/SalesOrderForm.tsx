@@ -187,10 +187,17 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         });
         onClose();
         
-        // For trial users, open PDF directly if available
-        if (isTrialMode && pdfUrl) {
+        // Download PDF for both trial and logged-in users if available
+        if (pdfUrl) {
           setTimeout(() => {
-            window.open(pdfUrl, '_blank');
+            // Create a temporary download link
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.download = `sales_order_${formData.customerName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
           }, 500);
         }
       } else {

@@ -7,8 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ExcelUpload } from "@/components/FileUpload";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Zap, Trash2 } from "lucide-react";
+import { ArrowLeft, Zap, Trash2, Plus, Edit } from "lucide-react";
 import { parseExcelFile, validateShortcutData, ShortcutRow } from "@/utils/excel";
+import ShortcutForm, { ShortcutFormData } from "@/components/ShortcutForm";
 
 interface ProductShortcut {
   id: string;
@@ -25,6 +26,8 @@ const ProductShortcuts = () => {
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [showShortcutForm, setShowShortcutForm] = useState(false);
+  const [editingShortcut, setEditingShortcut] = useState<ShortcutFormData | null>(null);
 
   useEffect(() => {
     fetchShortcuts();
@@ -142,6 +145,77 @@ const ProductShortcuts = () => {
     }
   };
 
+  const handleSaveShortcut = async (shortcutData: ShortcutFormData) => {
+    if (!companyId) {
+      toast({
+        title: "Error",
+        description: "Company not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (editingShortcut?.id) {
+        // Update existing shortcut
+        const { error } = await supabase
+          .from('product_shortcuts')
+          .update({
+            full_name: shortcutData.full_name,
+            shortcut_name: shortcutData.shortcut_name,
+          })
+          .eq('id', editingShortcut.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Shortcut updated successfully",
+        });
+      } else {
+        // Create new shortcut
+        const { error } = await supabase
+          .from('product_shortcuts')
+          .insert([{
+            company_id: companyId,
+            full_name: shortcutData.full_name,
+            shortcut_name: shortcutData.shortcut_name,
+          }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Shortcut added successfully",
+        });
+      }
+
+      fetchShortcuts(); // Refresh the list
+      setShowShortcutForm(false);
+      setEditingShortcut(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: editingShortcut ? "Failed to update shortcut" : "Failed to add shortcut",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditShortcut = (shortcut: ProductShortcut) => {
+    setEditingShortcut({
+      id: shortcut.id,
+      full_name: shortcut.full_name,
+      shortcut_name: shortcut.shortcut_name,
+    });
+    setShowShortcutForm(true);
+  };
+
+  const handleAddShortcut = () => {
+    setEditingShortcut(null);
+    setShowShortcutForm(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -176,10 +250,18 @@ const ProductShortcuts = () => {
           {/* Import Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Import Product Shortcuts</CardTitle>
-              <CardDescription>
-                Upload an Excel file with columns: Full Product Name, Shortcut Name
-              </CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Add Product Shortcuts</CardTitle>
+                  <CardDescription>
+                    Add individual shortcuts or upload an Excel file with columns: Full Product Name, Shortcut Name
+                  </CardDescription>
+                </div>
+                <Button onClick={handleAddShortcut}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Shortcut
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <ExcelUpload
@@ -228,13 +310,22 @@ const ProductShortcuts = () => {
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteShortcut(shortcut.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditShortcut(shortcut)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteShortcut(shortcut.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -246,6 +337,16 @@ const ProductShortcuts = () => {
           </Card>
         </div>
       </main>
+
+      <ShortcutForm
+        open={showShortcutForm}
+        onClose={() => {
+          setShowShortcutForm(false);
+          setEditingShortcut(null);
+        }}
+        onSave={handleSaveShortcut}
+        shortcut={editingShortcut}
+      />
     </div>
   );
 };
