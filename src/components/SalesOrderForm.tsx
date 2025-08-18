@@ -176,6 +176,20 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
             ? "Sales order generated successfully!" 
             : "Sales order submitted successfully!",
         });
+
+        // Open PDF in a new tab for both trial and logged-in users
+        if (pdfUrl) {
+          setTimeout(() => {
+            // This is the standard and most reliable way to open a URL in a new tab.
+            // Note: It might be affected by browser pop-up blockers if not triggered by a direct user action.
+            window.open(pdfUrl, '_blank');
+            
+            toast({
+              title: "PDF Opened",
+              description: "The sales order PDF has been opened in a new tab.",
+            });
+          }, 1000); // A small delay gives the success toast time to appear.
+        }
         
         // Reset form
         setFormData({
