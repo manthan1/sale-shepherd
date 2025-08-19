@@ -18,6 +18,7 @@ export interface ProductFormData {
   rate: number;
   hsn_sac: string;
   unit: string;
+  tax_rate: number;
 }
 
 const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
@@ -27,6 +28,7 @@ const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
     rate: 0,
     hsn_sac: "",
     unit: "",
+    tax_rate: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,6 +41,7 @@ const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
         rate: 0,
         hsn_sac: "",
         unit: "",
+        tax_rate: 0,
       });
     }
   }, [product, open]);
@@ -131,6 +134,20 @@ const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
               value={formData.unit}
               onChange={(e) => handleInputChange('unit', e.target.value)}
               placeholder="e.g., PCS, KG, HR"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="tax_rate">Tax Rate (%)</Label>
+            <Input
+              id="tax_rate"
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              value={formData.tax_rate}
+              onChange={(e) => handleInputChange('tax_rate', parseFloat(e.target.value) || 0)}
+              placeholder="Enter tax rate (e.g., 12, 18)"
             />
           </div>
 

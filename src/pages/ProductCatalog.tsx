@@ -17,6 +17,7 @@ interface Product {
   rate: number;
   hsn_sac: string | null;
   unit: string | null;
+  tax_rate: number;
   created_at: string;
 }
 
@@ -109,6 +110,7 @@ const ProductCatalog = () => {
         rate: row['Rate'],
         hsn_sac: row['HSN/SAC'] || null,
         unit: row['Unit'] || null,
+        tax_rate: row['Tax Rate'] || 0, // Default to 0 if not provided in Excel
       }));
 
       const { error } = await supabase
@@ -178,6 +180,7 @@ const ProductCatalog = () => {
             rate: productData.rate,
             hsn_sac: productData.hsn_sac || null,
             unit: productData.unit || null,
+            tax_rate: productData.tax_rate,
           })
           .eq('id', editingProduct.id);
 
@@ -197,6 +200,7 @@ const ProductCatalog = () => {
             rate: productData.rate,
             hsn_sac: productData.hsn_sac || null,
             unit: productData.unit || null,
+            tax_rate: productData.tax_rate,
           }]);
 
         if (error) throw error;
@@ -226,6 +230,7 @@ const ProductCatalog = () => {
       rate: product.rate,
       hsn_sac: product.hsn_sac || "",
       unit: product.unit || "",
+      tax_rate: product.tax_rate || 0,
     });
     setShowProductForm(true);
   };
@@ -273,7 +278,7 @@ const ProductCatalog = () => {
                 <div>
                   <CardTitle>Add Products</CardTitle>
                   <CardDescription>
-                    Add individual products or upload an Excel file with columns: Product Name, Rate, HSN/SAC, Unit
+                    Add individual products or upload an Excel file with columns: Product Name, Rate, HSN/SAC, Unit, Tax Rate
                   </CardDescription>
                 </div>
                 <Button onClick={handleAddProduct}>
@@ -285,7 +290,7 @@ const ProductCatalog = () => {
             <CardContent>
               <ExcelUpload
                 label="Product Excel File"
-                description="Excel file with Product Name, Rate, HSN/SAC, Unit columns"
+                description="Excel file with Product Name, Rate, HSN/SAC, Unit, Tax Rate columns"
                 onFileSelect={handleExcelImport}
               />
               {importing && (
@@ -318,6 +323,7 @@ const ProductCatalog = () => {
                         <TableHead>Rate</TableHead>
                         <TableHead>HSN/SAC</TableHead>
                         <TableHead>Unit</TableHead>
+                        <TableHead>Tax Rate (%)</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -328,6 +334,7 @@ const ProductCatalog = () => {
                           <TableCell>₹{product.rate.toFixed(2)}</TableCell>
                           <TableCell>{product.hsn_sac || "-"}</TableCell>
                           <TableCell>{product.unit || "-"}</TableCell>
+                          <TableCell>{product.tax_rate}%</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
                               <Button
