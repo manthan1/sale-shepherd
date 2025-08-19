@@ -42,9 +42,11 @@ export const validateProductData = (data: any[]): ProductRow[] => {
     const rateString = row['Rate']?.toString();
     const hsn = row['HSN/SAC']?.toString().trim();
     const unit = row['Unit']?.toString().trim();
+    const taxRateString = row['Tax Rate']?.toString();
 
     // Try to convert the rate to a number
     const rate = parseFloat(rateString);
+    const taxRate = parseFloat(taxRateString);
 
     // Now, validate the cleaned and parsed data
     if (name && !isNaN(rate) && hsn && unit) {
@@ -53,6 +55,7 @@ export const validateProductData = (data: any[]): ProductRow[] => {
         'Rate': rate, // We now have a guaranteed number
         'HSN/SAC': hsn,
         'Unit': unit,
+        'Tax Rate': taxRate,
       });
     }
   }
