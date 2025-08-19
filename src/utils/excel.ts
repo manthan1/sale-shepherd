@@ -5,6 +5,7 @@ export interface ProductRow {
   'Rate': number;
   'HSN/SAC': string;
   'Unit': string;
+  'Tax Rate': string;
 }
 
 export interface ShortcutRow {
