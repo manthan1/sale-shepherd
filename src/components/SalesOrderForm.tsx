@@ -24,6 +24,7 @@ interface OrderFormData {
   state: string;
   contactNumber: string;
   orderDetails: string;
+  freight_expense: string;
 }
 
 // Fake data for trial mode
@@ -53,6 +54,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     state: "",
     contactNumber: "",
     orderDetails: "",
+    freight_expense: "",
   });
 
   useEffect(() => {
@@ -161,6 +163,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
               state: formData.state.trim(),
               contact_number: formData.contactNumber.trim(),
               order_details: formData.orderDetails.trim(),
+              freight_expense: parseInt(formData.freight_expense) || 0,
               pdf_url: pdfUrl,
               is_trial: false,
             }]);
@@ -198,6 +201,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           state: "",
           contactNumber: "",
           orderDetails: "",
+          freight_expense: "",
         });
         onClose();
         
@@ -343,7 +347,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
             <CardHeader>
               <CardTitle className="text-lg">Order Information</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="orderDetails">Order Details *</Label>
                 <Textarea
@@ -353,6 +357,18 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                   placeholder="Enter detailed order information..."
                   rows={4}
                   required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="freight_expense">Freight Expense</Label>
+                <Input
+                  id="freight_expense"
+                  type="number"
+                  value={formData.freight_expense}
+                  onChange={(e) => handleInputChange('freight_expense', e.target.value)}
+                  placeholder="Enter freight expense amount"
+                  min="0"
                 />
               </div>
             </CardContent>

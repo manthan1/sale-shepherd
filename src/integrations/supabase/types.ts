@@ -188,6 +188,7 @@ export type Database = {
           contact_number: string | null
           created_at: string
           customer_name: string
+          freight_expense: number | null
           id: string
           is_trial: boolean | null
           order_details: string
@@ -201,6 +202,7 @@ export type Database = {
           contact_number?: string | null
           created_at?: string
           customer_name: string
+          freight_expense?: number | null
           id?: string
           is_trial?: boolean | null
           order_details: string
@@ -214,6 +216,7 @@ export type Database = {
           contact_number?: string | null
           created_at?: string
           customer_name?: string
+          freight_expense?: number | null
           id?: string
           is_trial?: boolean | null
           order_details?: string
