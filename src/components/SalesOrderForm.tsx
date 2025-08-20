@@ -100,8 +100,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     try {
 
       const webhookUrl = isTrialMode
-        ? "https://n8n.srv898271.hstgr.cloud/webhook-test/7ed8b450-cdfd-4767-8ed3-3a5f1d225fc3" // Trial form submission webhook
-        : "https://n8n.srv898271.hstgr.cloud/webhook-test/bbd7cf14-90df-4946-8d2d-2de208c58b97"; // Logged-in user webhook
+        ? "https://n8n.srv898271.hstgr.cloud/webhook/7ed8b450-cdfd-4767-8ed3-3a5f1d225fc3" // Trial form submission webhook
+        : "https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97"; // Logged-in user webhook
       
       // Prepare order data
       const orderData = {
