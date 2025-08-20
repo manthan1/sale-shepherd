@@ -357,9 +357,9 @@ const CompanySettings = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <p className="text-lg">Loading...</p>
+          <p className="text-lg text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -367,9 +367,9 @@ const CompanySettings = () => {
 
   if (!companyData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <p className="text-lg">Unable to load company data</p>
+          <p className="text-lg text-muted-foreground">Unable to load company data</p>
           <Button onClick={() => navigate("/")} className="mt-4">
             Go Back
           </Button>
@@ -379,20 +379,24 @@ const CompanySettings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b">
+    <div className="min-h-screen bg-white">
+      <header className="bg-white border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-6">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
-              <h1 className="text-2xl font-bold">
-                {isCreateMode ? "Add Company Details" : "Company Settings"}
-              </h1>
+              <div>
+                <h1 className="text-3xl font-bold text-black">
+                  {isCreateMode ? "Company Setup." : "Company Settings."}
+                  <br />
+                  <span className="text-primary">AI does the rest.</span>
+                </h1>
+              </div>
             </div>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving} className="h-11 px-6">
               <Save className="w-4 h-4 mr-2" />
               {saving ? "Saving..." : isCreateMode ? "Create Company" : "Save Changes"}
             </Button>
@@ -400,16 +404,16 @@ const CompanySettings = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="space-y-8">
           {/* Company Details */}
-          <Card>
+          <Card className="border-border shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-xl text-black">
+                <Building2 className="w-5 h-5 text-primary" />
                 Company Details
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 {isCreateMode 
                   ? "Enter your company information and bank details to get started" 
                   : "Update your company information and bank details"

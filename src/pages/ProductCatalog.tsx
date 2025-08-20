@@ -242,46 +242,49 @@ const ProductCatalog = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <p className="text-lg">Loading...</p>
+          <p className="text-lg text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b">
+    <div className="min-h-screen bg-white">
+      <header className="bg-white border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-6">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
-              <div className="flex items-center gap-2">
-                <Package className="w-6 h-6" />
-                <h1 className="text-2xl font-bold">Product Catalog</h1>
+              <div>
+                <h1 className="text-3xl font-bold text-black">
+                  Product Catalog.
+                  <br />
+                  <span className="text-primary">AI organizes everything.</span>
+                </h1>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          {/* Import Section */}
-          <Card>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="space-y-8">
+          {/* Add Products Section */}
+          <Card className="border-border shadow-sm">
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle>Add Products</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-xl text-black">Add Products</CardTitle>
+                  <CardDescription className="text-muted-foreground">
                     Add individual products or upload an Excel file with columns: Product Name, Rate, HSN/SAC, Unit, Tax Rate
                   </CardDescription>
                 </div>
-                <Button onClick={handleAddProduct}>
+                <Button onClick={handleAddProduct} className="h-11 px-6">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Product
                 </Button>
@@ -302,10 +305,10 @@ const ProductCatalog = () => {
           </Card>
 
           {/* Products Table */}
-          <Card>
+          <Card className="border-border shadow-sm">
             <CardHeader>
-              <CardTitle>Products ({products.length})</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl text-black">Products ({products.length})</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Your imported product catalog
               </CardDescription>
             </CardHeader>

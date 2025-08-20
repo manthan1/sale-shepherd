@@ -151,13 +151,22 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Sales Order Portal</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-black mb-4">
+            Welcome back.
+            <br />
+            <span className="text-primary">AI does the work.</span>
+          </h1>
+          <p className="text-lg text-muted-foreground">
             Access your company configuration dashboard
-          </CardDescription>
+          </p>
+        </div>
+        
+        <Card className="border-border shadow-lg">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-xl text-foreground">Get Started</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="space-y-4">
@@ -166,58 +175,62 @@ const Auth = () => {
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="login" className="space-y-4">
+            <TabsContent value="login" className="space-y-6">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-email" className="text-sm font-medium text-foreground">Email</Label>
                   <Input
                     id="login-email"
                     type="email"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
+                  <Label htmlFor="login-password" className="text-sm font-medium text-foreground">Password</Label>
                   <Input
                     id="login-password"
                     type="password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
               </form>
             </TabsContent>
 
-            <TabsContent value="signup" className="space-y-4">
+            <TabsContent value="signup" className="space-y-6">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="company-name">Company Name</Label>
+                  <Label htmlFor="company-name" className="text-sm font-medium text-foreground">Company Name</Label>
                   <Input
                     id="company-name"
                     type="text"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email" className="text-sm font-medium text-foreground">Email</Label>
                   <Input
                     id="signup-email"
                     type="email"
                     value={signupEmail}
                     onChange={(e) => setSignupEmail(e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password" className="text-sm font-medium text-foreground">Password</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -225,16 +238,18 @@ const Auth = () => {
                     onChange={(e) => setSignupPassword(e.target.value)}
                     required
                     minLength={6}
+                    className="h-11"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={isLoading}>
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
             </TabsContent>
           </Tabs>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };

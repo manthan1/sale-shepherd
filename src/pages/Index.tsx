@@ -93,26 +93,30 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-white">
       {user ? (
         <div>
           {/* Header */}
-          <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
+          <header className="bg-white border-b border-border sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center py-4">
+              <div className="flex justify-between items-center py-6">
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900">Sales Order Dashboard</h1>
-                  <p className="text-sm text-slate-600">Welcome back, {user.email}</p>
+                  <h1 className="text-3xl font-bold text-black mb-1">
+                    Dashboard.
+                    <br />
+                    <span className="text-primary">AI does the math.</span>
+                  </h1>
+                  <p className="text-muted-foreground">Welcome back, {user.email}</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <Badge variant={isCompanyRegistered ? "default" : "destructive"}>
@@ -127,17 +131,17 @@ const Index = () => {
             </div>
           </header>
 
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
             {/* Generate Sales Order Section */}
-            <Card className="bg-white/50 backdrop-blur-sm border-slate-200">
+            <Card className="border-border shadow-sm">
               <CardContent className="p-8">
-                <div className="text-center space-y-4">
+                <div className="text-center space-y-6">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
                     <FileText className="w-8 h-8 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Generate Sales Order</h2>
-                    <p className="text-slate-600 mb-6">Create professional sales orders instantly</p>
+                    <h2 className="text-3xl font-bold text-black mb-3">Generate Sales Order</h2>
+                    <p className="text-lg text-muted-foreground mb-8">Create professional sales orders instantly</p>
                   </div>
                   
                   {!isCompanyRegistered && (
@@ -157,10 +161,10 @@ const Index = () => {
                     size="lg" 
                     onClick={handleGenerateSalesOrder}
                     disabled={checkingCompany || !isCompanyRegistered}
-                    className="px-8 py-3 text-lg"
+                    className="px-8 py-4 text-lg h-12"
                   >
                     <FileText className="w-5 h-5 mr-2" />
-                    Generate Sales Order
+                    Try Demo Now
                   </Button>
                 </div>
               </CardContent>
@@ -168,13 +172,13 @@ const Index = () => {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="w-5 h-5" />
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg text-black">
+                    <Settings className="w-5 h-5 text-primary" />
                     Company Settings
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-muted-foreground">
                     {hasCompanyRecord 
                       ? "Configure your company details and preferences" 
                       : "Add your company details to get started"
@@ -184,7 +188,8 @@ const Index = () => {
                 <CardContent>
                   <Button 
                     onClick={() => navigate("/company-settings")} 
-                    className="w-full"
+                    className="w-full h-11"
+                    variant="outline"
                   >
                     {hasCompanyRecord ? (
                       <>
@@ -201,20 +206,20 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="w-5 h-5" />
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg text-black">
+                    <Package className="w-5 h-5 text-primary" />
                     Product Catalog
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-muted-foreground">
                     Manage your product inventory and pricing
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button 
                     onClick={() => navigate("/product-catalog")} 
-                    className="w-full" 
+                    className="w-full h-11" 
                     variant="outline"
                   >
                     View Catalog
@@ -222,20 +227,20 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="w-5 h-5" />
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg text-black">
+                    <Zap className="w-5 h-5 text-primary" />
                     Product Shortcuts
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-muted-foreground">
                     Create quick shortcuts for frequently used products
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button 
                     onClick={() => navigate("/product-shortcuts")} 
-                    className="w-full" 
+                    className="w-full h-11" 
                     variant="outline"
                   >
                     Manage Shortcuts
@@ -243,20 +248,20 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Eye className="w-5 h-5" />
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg text-black">
+                    <Eye className="w-5 h-5 text-primary" />
                     Sales Orders
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-muted-foreground">
                     View and manage your generated sales orders
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button 
                     onClick={() => navigate("/sales-orders")} 
-                    className="w-full" 
+                    className="w-full h-11" 
                     variant="outline"
                   >
                     View Orders
