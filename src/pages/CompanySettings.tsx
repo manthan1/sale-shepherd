@@ -24,11 +24,12 @@ interface CompanyData {
   logo_url: string | null;
   pdf_background_url: string | null;
   payment_qr_url: string | null;
+  authorized_signature_url: string | null;
   telegram_chat_id: string | null;
 }
 
 // Add this type definition
-type UploadableField = 'logo_url' | 'pdf_background_url' | 'payment_qr_url';
+type UploadableField = 'logo_url' | 'pdf_background_url' | 'payment_qr_url' | 'authorized_signature_url';
 
 const CompanySettings = () => {
   const { user } = useAuth();
@@ -119,6 +120,7 @@ const CompanySettings = () => {
       logo_url: null,
       pdf_background_url: null,
       payment_qr_url: null,
+      authorized_signature_url: null,
       telegram_chat_id: '',
     });
     setIsCreateMode(true);
@@ -234,6 +236,7 @@ const CompanySettings = () => {
       logo_url: companyData.logo_url,
       pdf_background_url: companyData.pdf_background_url,
       payment_qr_url: companyData.payment_qr_url,
+      authorized_signature_url: companyData.authorized_signature_url,
   };
 
       
@@ -555,6 +558,16 @@ const CompanySettings = () => {
                 currentImageUrl={companyData.payment_qr_url}
                 isUploading={uploadingField === 'payment_qr_url'}
                 
+              />
+
+              <FileUpload
+                label="Authorized Signature"
+                description="Upload authorized signature image"
+                accept="image/*"
+                onFileSelect={(file) => handleFileUpload(file, 'authorized_signature_url')}
+                buttonText="Upload Signature"
+                currentImageUrl={companyData.authorized_signature_url}
+                isUploading={uploadingField === 'authorized_signature_url'}
               />
             </CardContent>
           </Card>

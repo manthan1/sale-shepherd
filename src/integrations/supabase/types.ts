@@ -17,6 +17,7 @@ export type Database = {
       companies: {
         Row: {
           address: string | null
+          authorized_signature_url: string | null
           bank_account_holder: string | null
           bank_account_no: string | null
           bank_ifsc: string | null
@@ -34,6 +35,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          authorized_signature_url?: string | null
           bank_account_holder?: string | null
           bank_account_no?: string | null
           bank_ifsc?: string | null
@@ -51,6 +53,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          authorized_signature_url?: string | null
           bank_account_holder?: string | null
           bank_account_no?: string | null
           bank_ifsc?: string | null
