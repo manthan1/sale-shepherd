@@ -230,15 +230,15 @@ const ProductShortcuts = () => {
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-4">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
               <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
+                <span className="hidden sm:inline">Back</span>
               </Button>
               <div className="flex items-center gap-2">
-                <Zap className="w-6 h-6" />
-                <h1 className="text-2xl font-bold">Product Shortcuts</h1>
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
+                <h1 className="text-xl sm:text-2xl font-bold">Product Shortcuts</h1>
               </div>
             </div>
           </div>
@@ -250,14 +250,14 @@ const ProductShortcuts = () => {
           {/* Import Section */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <CardTitle>Add Product Shortcuts</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Add Product Shortcuts</CardTitle>
+                  <CardDescription className="text-sm sm:text-base mt-1">
                     Add individual shortcuts or upload an Excel file with columns: Full Product Name, Shortcut Name
                   </CardDescription>
                 </div>
-                <Button onClick={handleAddShortcut}>
+                <Button onClick={handleAddShortcut} className="w-full sm:w-auto">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Shortcut
                 </Button>
@@ -291,15 +291,16 @@ const ProductShortcuts = () => {
                   No product shortcuts found. Import your first Excel file to get started.
                 </div>
               ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Full Product Name</TableHead>
-                        <TableHead>Shortcut Name</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                <div className="rounded-md border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[200px]">Full Product Name</TableHead>
+                          <TableHead className="min-w-[150px]">Shortcut Name</TableHead>
+                          <TableHead className="min-w-[100px]">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
                     <TableBody>
                       {shortcuts.map((shortcut) => (
                         <TableRow key={shortcut.id}>
@@ -330,7 +331,8 @@ const ProductShortcuts = () => {
                         </TableRow>
                       ))}
                     </TableBody>
-                  </Table>
+                    </Table>
+                  </div>
                 </div>
               )}
             </CardContent>

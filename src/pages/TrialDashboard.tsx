@@ -69,37 +69,37 @@ const TrialDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">Loading trial orders...</p>
+          <p className="text-lg text-muted-foreground">Loading trial orders...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
           <Button 
             variant="outline" 
             onClick={() => navigate('/')}
-            className="mb-4"
+            className="mb-4 w-full sm:w-auto"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Button>
           
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Trial Sales Orders</h1>
-            <p className="text-lg text-gray-600 mb-4">View your recently generated trial sales orders</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">Trial Sales Orders</h1>
+            <p className="text-base sm:text-lg text-muted-foreground mb-4 px-2">View your recently generated trial sales orders</p>
             
             <Card className="bg-amber-50 border-amber-200 max-w-2xl mx-auto">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-center gap-2 text-amber-800">
-                  <Clock className="w-5 h-5" />
-                  <p className="text-sm">
+              <CardContent className="pt-6 px-4 sm:px-6">
+                <div className="flex items-center justify-center gap-2 text-amber-800 text-center">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <p className="text-xs sm:text-sm">
                     <strong>Note:</strong> Trial orders are available for viewing for 1 hour after creation.
                   </p>
                 </div>
@@ -110,10 +110,10 @@ const TrialDashboard = () => {
 
         {orders.length === 0 ? (
           <Card className="max-w-2xl mx-auto">
-            <CardContent className="pt-6 text-center">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Trial Orders Found</h3>
-              <p className="text-gray-600 mb-4">
+            <CardContent className="pt-6 text-center px-4 sm:px-6">
+              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Trial Orders Found</h3>
+              <p className="text-muted-foreground mb-4 text-sm sm:text-base">
                 No trial sales orders found in the past hour. Create a new trial order to see it here.
               </p>
               <Button onClick={() => navigate('/')}>
@@ -131,32 +131,32 @@ const TrialDashboard = () => {
                       <FileText className="w-5 h-5 text-primary" />
                       <span>Order for {order.customer_name}</span>
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-xs sm:text-sm text-muted-foreground">
                       {formatDate(order.created_at)}
                     </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <CardContent className="px-4 sm:px-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <p className="text-sm text-gray-600">Customer Name</p>
+                      <p className="text-sm text-muted-foreground">Customer Name</p>
                       <p className="font-medium">{order.customer_name}</p>
                     </div>
                     {order.state && (
                       <div>
-                        <p className="text-sm text-gray-600">State</p>
+                        <p className="text-sm text-muted-foreground">State</p>
                         <p className="font-medium">{order.state}</p>
                       </div>
                     )}
                     {order.contact_number && (
                       <div>
-                        <p className="text-sm text-gray-600">Contact</p>
+                        <p className="text-sm text-muted-foreground">Contact</p>
                         <p className="font-medium">{order.contact_number}</p>
                       </div>
                     )}
                     <div>
-                      <p className="text-sm text-gray-600">Type</p>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                      <p className="text-sm text-muted-foreground">Type</p>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground">
                         Trial
                       </span>
                     </div>
@@ -164,14 +164,14 @@ const TrialDashboard = () => {
                   
                   {order.shipping_address && (
                     <div className="mb-4">
-                      <p className="text-sm text-gray-600">Shipping Address</p>
-                      <p className="font-medium">{order.shipping_address}</p>
+                      <p className="text-sm text-muted-foreground">Shipping Address</p>
+                      <p className="font-medium break-words">{order.shipping_address}</p>
                     </div>
                   )}
                   
                   <div className="mb-4">
-                    <p className="text-sm text-gray-600">Order Details</p>
-                    <p className="font-medium">{order.order_details}</p>
+                    <p className="text-sm text-muted-foreground">Order Details</p>
+                    <p className="font-medium break-words">{order.order_details}</p>
                   </div>
 
                   <div className="flex justify-end">

@@ -171,7 +171,7 @@ const Index = () => {
             </Card>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <Card className="hover:shadow-lg transition-all duration-200 border-border">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg text-black">

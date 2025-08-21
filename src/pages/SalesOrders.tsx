@@ -79,24 +79,24 @@ const SalesOrders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto py-8 px-4 space-y-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-6 sm:py-8 px-4 space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
             <Button
               variant="outline"
               onClick={() => navigate('/')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              <span className="sm:inline">Back to Dashboard</span>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Sales Orders</h1>
-              <p className="text-slate-600 mt-1">Manage and view your generated sales orders</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Sales Orders</h1>
+              <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage and view your generated sales orders</p>
             </div>
           </div>
-          <Badge variant="outline" className="text-sm">
+          <Badge variant="outline" className="text-xs sm:text-sm self-start sm:self-auto">
             {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
           </Badge>
         </div>
@@ -123,16 +123,16 @@ const SalesOrders = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>State</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Order Details</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>PDF</TableHead>
+                      <TableHead className="min-w-[200px]">Customer</TableHead>
+                      <TableHead className="min-w-[100px]">State</TableHead>
+                      <TableHead className="min-w-[120px]">Contact</TableHead>
+                      <TableHead className="min-w-[200px]">Order Details</TableHead>
+                      <TableHead className="min-w-[80px]">Type</TableHead>
+                      <TableHead className="min-w-[120px]">Date</TableHead>
+                      <TableHead className="min-w-[120px]">PDF</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -142,7 +142,7 @@ const SalesOrders = () => {
                           <div>
                             <p className="font-medium">{order.customer_name}</p>
                             {order.shipping_address && (
-                              <p className="text-sm text-slate-600 truncate max-w-[200px]">
+                              <p className="text-sm text-muted-foreground truncate max-w-[200px]">
                                 {order.shipping_address}
                               </p>
                             )}
@@ -175,7 +175,7 @@ const SalesOrders = () => {
                               View PDF
                             </Button>
                           ) : (
-                            <span className="text-slate-400">No PDF</span>
+                            <span className="text-muted-foreground">No PDF</span>
                           )}
                         </TableCell>
                       </TableRow>

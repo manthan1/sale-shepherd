@@ -56,9 +56,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     <div className="space-y-2">
       <Label>{label}</Label>
       {/* --- NEW JSX for displaying the image and placeholder --- */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         {displayUrl ? (
-          <div className="relative w-24 h-24 rounded-md overflow-hidden border">
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-md overflow-hidden border flex-shrink-0">
             <img src={displayUrl} alt={label} className="w-full h-full object-cover" />
             {isUploading && (
                 <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
@@ -67,11 +67,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             )}
           </div>
         ) : (
-          <div className="w-24 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted">
-            <UploadCloud className="w-8 h-8 text-muted-foreground" />
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-md border border-dashed flex items-center justify-center bg-muted flex-shrink-0">
+            <UploadCloud className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground" />
           </div>
         )}
-        <div className="flex-1">
+        <div className="flex-1 w-full sm:w-auto">
           <Input
             id={label} // Give it an ID for the button to reference
             ref={fileInputRef}
@@ -85,6 +85,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             variant="outline"
             onClick={handleButtonClick}
             disabled={isUploading} // Disable button during upload
+            className="w-full sm:w-auto"
           >
             {isUploading ? 'Uploading...' : buttonText}
           </Button>

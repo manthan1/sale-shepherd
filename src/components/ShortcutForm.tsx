@@ -66,14 +66,14 @@ const ShortcutForm = ({ open, onClose, onSave, shortcut }: ShortcutFormProps) =>
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md mx-4 sm:mx-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">
             {shortcut ? "Edit Shortcut" : "Add Shortcut"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div>
             <Label htmlFor="full_name">Full Product Name *</Label>
             <Input
@@ -96,11 +96,11 @@ const ShortcutForm = ({ open, onClose, onSave, shortcut }: ShortcutFormProps) =>
             />
           </div>
 
-          <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
               {isSubmitting ? "Saving..." : "Save Shortcut"}
             </Button>
           </div>

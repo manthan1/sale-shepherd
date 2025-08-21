@@ -151,28 +151,28 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-6 sm:py-12">
       <div className="w-full max-w-md">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-black mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">
             Welcome back.
             <br />
             <span className="text-primary">AI does the work.</span>
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base sm:text-lg text-muted-foreground px-2">
             Access your company configuration dashboard
           </p>
         </div>
         
-        <Card className="border-border shadow-lg">
-        <CardHeader className="text-center pb-4">
-          <CardTitle className="text-xl text-foreground">Get Started</CardTitle>
+        <Card className="border-border shadow-lg mx-2 sm:mx-0">
+        <CardHeader className="text-center pb-4 px-4 sm:px-6">
+          <CardTitle className="text-lg sm:text-xl text-foreground">Get Started</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <Tabs defaultValue="login" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 h-10">
+              <TabsTrigger value="login" className="text-sm">Login</TabsTrigger>
+              <TabsTrigger value="signup" className="text-sm">Sign Up</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="space-y-6">
