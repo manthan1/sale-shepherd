@@ -193,6 +193,7 @@ export type Database = {
           company_id: string | null
           contact_number: string | null
           created_at: string
+          cust_gst_number: string | null
           customer_name: string
           freight_expense: number | null
           id: string
@@ -207,6 +208,7 @@ export type Database = {
           company_id?: string | null
           contact_number?: string | null
           created_at?: string
+          cust_gst_number?: string | null
           customer_name: string
           freight_expense?: number | null
           id?: string
@@ -221,6 +223,7 @@ export type Database = {
           company_id?: string | null
           contact_number?: string | null
           created_at?: string
+          cust_gst_number?: string | null
           customer_name?: string
           freight_expense?: number | null
           id?: string

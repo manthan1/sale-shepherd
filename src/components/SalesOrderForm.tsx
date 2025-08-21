@@ -25,6 +25,7 @@ interface OrderFormData {
   contactNumber: string;
   orderDetails: string;
   freight_expense: string;
+  cust_gst_number: string;
 }
 
 // Fake data for trial mode
@@ -55,6 +56,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     contactNumber: "",
     orderDetails: "",
     freight_expense: "",
+    cust_gst_number: "",
   });
 
   useEffect(() => {
@@ -106,6 +108,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
       // Prepare order data
       const orderData = {
         ...formData, // This will include all fields, even if blank
+        cust_gst_number: formData.cust_gst_number.trim() || null,
         timestamp: new Date().toISOString(),
         isTrialMode,
         company_id: isTrialMode ? null : companyProfile?.company_id || null,
@@ -165,6 +168,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
               contact_number: formData.contactNumber.trim(),
               order_details: formData.orderDetails.trim(),
               freight_expense: parseInt(formData.freight_expense) || 0,
+              cust_gst_number: formData.cust_gst_number.trim() || null,
               pdf_url: pdfUrl,
               is_trial: false,
             }]);
@@ -203,6 +207,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           contactNumber: "",
           orderDetails: "",
           freight_expense: "",
+          cust_gst_number: "",
         });
         onClose();
         
@@ -321,6 +326,27 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    value={formData.state}
+                    onChange={(e) => handleInputChange('state', e.target.value)}
+                    placeholder="Enter state"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cust_gst_number">Customer GST Number</Label>
+                  <Input
+                    id="cust_gst_number"
+                    value={formData.cust_gst_number}
+                    onChange={(e) => handleInputChange('cust_gst_number', e.target.value)}
+                    placeholder="Enter GST number (optional)"
+                  />
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="shippingAddress">Shipping Address</Label>
                 <Textarea
@@ -329,16 +355,6 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                   onChange={(e) => handleInputChange('shippingAddress', e.target.value)}
                   placeholder="Enter shipping address"
                   rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  placeholder="Enter state"
                 />
               </div>
             </CardContent>
