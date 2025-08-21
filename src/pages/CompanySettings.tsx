@@ -382,21 +382,21 @@ const CompanySettings = () => {
     <div className="min-h-screen bg-white">
       <header className="bg-white border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 py-6">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-black">
+                <h1 className="text-2xl sm:text-3xl font-bold text-black">
                   {isCreateMode ? "Company Setup." : "Company Settings."}
                   <br />
                   <span className="text-primary">AI does the rest.</span>
                 </h1>
               </div>
             </div>
-            <Button onClick={handleSave} disabled={saving} className="h-11 px-6">
+            <Button onClick={handleSave} disabled={saving} className="h-11 px-6 w-full sm:w-auto">
               <Save className="w-4 h-4 mr-2" />
               {saving ? "Saving..." : isCreateMode ? "Create Company" : "Save Changes"}
             </Button>
@@ -404,7 +404,7 @@ const CompanySettings = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="space-y-8">
           {/* Company Details */}
           <Card className="border-border shadow-sm">

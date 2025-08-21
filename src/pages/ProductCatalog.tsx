@@ -254,14 +254,14 @@ const ProductCatalog = () => {
     <div className="min-h-screen bg-white">
       <header className="bg-white border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 py-6">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-black">
+                <h1 className="text-2xl sm:text-3xl font-bold text-black">
                   Product Catalog.
                   <br />
                   <span className="text-primary">AI organizes everything.</span>
@@ -272,19 +272,19 @@ const ProductCatalog = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="space-y-8">
           {/* Add Products Section */}
           <Card className="border-border shadow-sm">
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <CardTitle className="text-xl text-black">Add Products</CardTitle>
                   <CardDescription className="text-muted-foreground">
                     Add individual products or upload an Excel file with columns: Product Name, Rate, HSN/SAC, Unit, Tax Rate
                   </CardDescription>
                 </div>
-                <Button onClick={handleAddProduct} className="h-11 px-6">
+                <Button onClick={handleAddProduct} className="h-11 px-6 w-full sm:w-auto">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Product
                 </Button>
@@ -318,8 +318,53 @@ const ProductCatalog = () => {
                   No products found. Import your first Excel file to get started.
                 </div>
               ) : (
-                <div className="rounded-md border">
-                  <Table>
+                <div className="rounded-md border overflow-hidden">
+                  {/* Mobile Cards View */}
+                  <div className="sm:hidden">
+                    {products.map((product) => (
+                      <div key={product.id} className="border-b border-border last:border-b-0 p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-slate-900 truncate">{product.name}</h3>
+                            <p className="text-lg font-semibold text-primary">₹{product.rate.toFixed(2)}</p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditProduct(product)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteProduct(product.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">HSN/SAC:</span>
+                            <span className="ml-1">{product.hsn_sac || "-"}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Unit:</span>
+                            <span className="ml-1">{product.unit || "-"}</span>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-muted-foreground">Tax Rate:</span>
+                            <span className="ml-1">{product.tax_rate}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <Table className="hidden sm:table">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Product Name</TableHead>

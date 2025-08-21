@@ -262,9 +262,9 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <FileText className="w-5 h-5" />
             {isTrialMode ? "Try Sales Order Generation" : "Generate Sales Order"}
           </DialogTitle>
@@ -272,22 +272,22 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
         {isTrialMode && (
           <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="space-y-2">
-                  <h4 className="font-medium text-blue-900">Trial Mode - Test Data Available</h4>
+                  <h4 className="font-medium text-blue-900 text-sm sm:text-base">Trial Mode - Test Data Available</h4>
                   <div className="text-sm text-blue-700">
                     <p><strong>Test Companies:</strong></p>
-                    <ul className="list-disc list-inside ml-2 space-y-1">
+                    <ul className="list-disc list-inside ml-2 space-y-1 text-xs sm:text-sm">
                       {FAKE_COMPANIES.map(company => (
-                        <li key={company.id}>{company.name} - {company.state}</li>
+                        <li key={company.id} className="break-words">{company.name} - {company.state}</li>
                       ))}
                     </ul>
                     <p className="mt-2"><strong>Test Products:</strong></p>
-                    <ul className="list-disc list-inside ml-2 space-y-1">
+                    <ul className="list-disc list-inside ml-2 space-y-1 text-xs sm:text-sm">
                       {FAKE_PRODUCTS.map(product => (
-                        <li key={product.id}>{product.name} - ₹{product.rate.toLocaleString()}/{product.unit}</li>
+                        <li key={product.id} className="break-words">{product.name} - ₹{product.rate.toLocaleString()}/{product.unit}</li>
                       ))}
                     </ul>
                   </div>
@@ -297,13 +297,13 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           </Card>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Customer Information</CardTitle>
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Customer Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="customerName">Customer Name *</Label>
                   <Input
@@ -326,7 +326,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="state">State</Label>
                   <Input
@@ -361,8 +361,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Order Information</CardTitle>
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Order Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -391,11 +391,11 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
             </CardContent>
           </Card>
 
-          <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
               {isSubmitting ? "Submitting..." : "Submit Order"}
             </Button>
           </div>

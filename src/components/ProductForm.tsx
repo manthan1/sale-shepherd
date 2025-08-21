@@ -84,7 +84,7 @@ const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md mx-4 sm:mx-auto">
         <DialogHeader>
           <DialogTitle>
             {product ? "Edit Product" : "Add Product"}
@@ -117,24 +117,26 @@ const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
             />
           </div>
 
-          <div>
-            <Label htmlFor="hsn_sac">HSN/SAC</Label>
-            <Input
-              id="hsn_sac"
-              value={formData.hsn_sac}
-              onChange={(e) => handleInputChange('hsn_sac', e.target.value)}
-              placeholder="Enter HSN/SAC code"
-            />
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="hsn_sac">HSN/SAC</Label>
+              <Input
+                id="hsn_sac"
+                value={formData.hsn_sac}
+                onChange={(e) => handleInputChange('hsn_sac', e.target.value)}
+                placeholder="Enter HSN/SAC code"
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="unit">Unit</Label>
-            <Input
-              id="unit"
-              value={formData.unit}
-              onChange={(e) => handleInputChange('unit', e.target.value)}
-              placeholder="e.g., PCS, KG, HR"
-            />
+            <div>
+              <Label htmlFor="unit">Unit</Label>
+              <Input
+                id="unit"
+                value={formData.unit}
+                onChange={(e) => handleInputChange('unit', e.target.value)}
+                placeholder="e.g., PCS, KG, HR"
+              />
+            </div>
           </div>
 
           <div>
@@ -151,11 +153,11 @@ const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
             />
           </div>
 
-          <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
               {isSubmitting ? "Saving..." : "Save Product"}
             </Button>
           </div>
