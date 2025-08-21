@@ -67,7 +67,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('company_id, companies(*)')
+        .select('company_id, role, companies(*)')
         .eq('user_id', user?.id)
         .single();
       
@@ -111,6 +111,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         company_id: isTrialMode ? null : companyProfile?.company_id || null,
         isCompanyIdpresent: !isTrialMode && !!companyProfile?.company_id,
         user: user ? user.email : "anonymous",
+        isAdmin: isTrialMode ? false : (companyProfile?.role === 'admin'),
       };
       // const orderData = {
       //   customerName: formData.customerName.trim(),
