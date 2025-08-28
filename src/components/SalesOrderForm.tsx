@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { X, FileText, Info } from "lucide-react";
+import { X, FileText, Info, Plus, Edit2, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SalesOrderFormProps {
@@ -26,7 +27,24 @@ interface OrderFormData {
   orderDetails: string;
   freight_expense: string;
   cust_gst_number: string;
-  selectedProduct: string;
+}
+
+interface SelectedProduct {
+  id: string;
+  productId: string;
+  name: string;
+  rate: number;
+  unit: string;
+  hsn_sac: string;
+  tax_rate: number;
+  quantity: number;
+  discount: number;
+  discountedPrice: number;
+  totalAmount: number;
+}
+
+interface ProductFormData {
+  productId: string;
   quantity: string;
   discount: string;
   discountedPrice: string;
@@ -54,7 +72,15 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [companyProfile, setCompanyProfile] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
-  const [selectedProductData, setSelectedProductData] = useState<any>(null);
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [editingProduct, setEditingProduct] = useState<string | null>(null);
+  const [productFormData, setProductFormData] = useState<ProductFormData>({
+    productId: "",
+    quantity: "",
+    discount: "",
+    discountedPrice: "",
+  });
+  const [productSearchOpen, setProductSearchOpen] = useState(false);
   const [formData, setFormData] = useState<OrderFormData>({
     customerName: "",
     shippingAddress: "",
@@ -63,10 +89,6 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     orderDetails: "",
     freight_expense: "",
     cust_gst_number: "",
-    selectedProduct: "",
-    quantity: "",
-    discount: "",
-    discountedPrice: "",
   });
 
   useEffect(() => {
@@ -116,38 +138,139 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
   const handleInputChange = (field: keyof OrderFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleProductFormChange = (field: keyof ProductFormData, value: string) => {
+    setProductFormData(prev => ({ ...prev, [field]: value }));
     
-    // If product is selected, update selected product data and calculate discounted price
-    if (field === 'selectedProduct' && value) {
-      const product = products.find(p => p.id === value);
-      setSelectedProductData(product);
-      
-      // Reset dependent fields when product changes
-      setFormData(prev => ({ 
-        ...prev, 
-        [field]: value,
-        quantity: "",
-        discount: "",
-        discountedPrice: ""
-      }));
-    }
-    
-    // Calculate discounted price when quantity or discount changes
-    if ((field === 'quantity' || field === 'discount') && selectedProductData) {
-      const quantity = field === 'quantity' ? parseFloat(value) || 0 : parseFloat(formData.quantity) || 0;
-      const discount = field === 'discount' ? parseFloat(value) || 0 : parseFloat(formData.discount) || 0;
-      
-      if (quantity > 0) {
-        const totalAmount = selectedProductData.rate * quantity;
-        const discountedAmount = totalAmount - (totalAmount * discount / 100);
+    // Calculate amounts when quantity, discount, or discountedPrice changes
+    if ((field === 'quantity' || field === 'discount') && productFormData.productId) {
+      const product = products.find(p => p.id === productFormData.productId);
+      if (product) {
+        const quantity = field === 'quantity' ? parseFloat(value) || 0 : parseFloat(productFormData.quantity) || 0;
+        const discount = field === 'discount' ? parseFloat(value) || 0 : parseFloat(productFormData.discount) || 0;
         
-        setFormData(prev => ({ 
-          ...prev, 
-          [field]: value,
-          discountedPrice: discountedAmount.toFixed(2)
-        }));
+        if (quantity > 0) {
+          const totalAmount = product.rate * quantity;
+          const discountedAmount = totalAmount - (totalAmount * discount / 100);
+          
+          setProductFormData(prev => ({ 
+            ...prev, 
+            [field]: value,
+            discountedPrice: discountedAmount.toFixed(2)
+          }));
+        }
       }
     }
+    
+    // Calculate discount percentage when discountedPrice is entered manually
+    if (field === 'discountedPrice' && productFormData.productId && productFormData.quantity) {
+      const product = products.find(p => p.id === productFormData.productId);
+      if (product) {
+        const quantity = parseFloat(productFormData.quantity) || 0;
+        const discountedPrice = parseFloat(value) || 0;
+        
+        if (quantity > 0) {
+          const totalAmount = product.rate * quantity;
+          const discountPercent = totalAmount > 0 ? ((totalAmount - discountedPrice) / totalAmount) * 100 : 0;
+          
+          setProductFormData(prev => ({ 
+            ...prev, 
+            [field]: value,
+            discount: Math.max(0, discountPercent).toFixed(2)
+          }));
+        }
+      }
+    }
+  };
+
+  const addProduct = () => {
+    if (!productFormData.productId || !productFormData.quantity) {
+      toast({
+        title: "Missing Fields",
+        description: "Please select a product and enter quantity",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const product = products.find(p => p.id === productFormData.productId);
+    if (!product) return;
+
+    const quantity = parseFloat(productFormData.quantity);
+    const discount = parseFloat(productFormData.discount) || 0;
+    const discountedPrice = parseFloat(productFormData.discountedPrice) || (product.rate * quantity);
+    const totalAmount = product.rate * quantity;
+
+    const newProduct: SelectedProduct = {
+      id: Date.now().toString(),
+      productId: product.id,
+      name: product.name,
+      rate: product.rate,
+      unit: product.unit,
+      hsn_sac: product.hsn_sac,
+      tax_rate: product.tax_rate,
+      quantity,
+      discount,
+      discountedPrice,
+      totalAmount,
+    };
+
+    setSelectedProducts(prev => [...prev, newProduct]);
+    setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
+    setProductSearchOpen(false);
+  };
+
+  const editProduct = (productId: string) => {
+    const product = selectedProducts.find(p => p.id === productId);
+    if (product) {
+      setProductFormData({
+        productId: product.productId,
+        quantity: product.quantity.toString(),
+        discount: product.discount.toString(),
+        discountedPrice: product.discountedPrice.toString(),
+      });
+      setEditingProduct(productId);
+      setProductSearchOpen(true);
+    }
+  };
+
+  const updateProduct = () => {
+    if (!editingProduct || !productFormData.productId || !productFormData.quantity) return;
+
+    const product = products.find(p => p.id === productFormData.productId);
+    if (!product) return;
+
+    const quantity = parseFloat(productFormData.quantity);
+    const discount = parseFloat(productFormData.discount) || 0;
+    const discountedPrice = parseFloat(productFormData.discountedPrice) || (product.rate * quantity);
+    const totalAmount = product.rate * quantity;
+
+    setSelectedProducts(prev => prev.map(p => 
+      p.id === editingProduct 
+        ? {
+            ...p,
+            productId: product.id,
+            name: product.name,
+            rate: product.rate,
+            unit: product.unit,
+            hsn_sac: product.hsn_sac,
+            tax_rate: product.tax_rate,
+            quantity,
+            discount,
+            discountedPrice,
+            totalAmount,
+          }
+        : p
+    ));
+
+    setEditingProduct(null);
+    setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
+    setProductSearchOpen(false);
+  };
+
+  const removeProduct = (productId: string) => {
+    setSelectedProducts(prev => prev.filter(p => p.id !== productId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -165,12 +288,12 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
     // Validate that either order details OR product selection is filled
     const hasOrderDetails = formData.orderDetails.trim();
-    const hasProductSelection = formData.selectedProduct && formData.quantity;
+    const hasProductSelection = selectedProducts.length > 0;
     
     if (!hasOrderDetails && !hasProductSelection) {
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in either Order Details OR select a product with quantity",
+        description: "Please fill in either Order Details OR select at least one product",
         variant: "destructive",
       });
       return;
@@ -178,20 +301,17 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
     setIsSubmitting(true);
     try {
-
       const webhookUrl = isTrialMode
-        ? "https://n8n.srv898271.hstgr.cloud/webhook/7ed8b450-cdfd-4767-8ed3-3a5f1d225fc3" // Trial form submission webhook
-        : "https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97"; // Logged-in user webhook
+        ? "https://n8n.srv898271.hstgr.cloud/webhook/7ed8b450-cdfd-4767-8ed3-3a5f1d225fc3"
+        : "https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97";
       
       // Prepare order data
       const orderData = {
-        ...formData, // This will include all fields, even if blank
+        ...formData,
         cust_gst_number: formData.cust_gst_number.trim() || null,
-        product_name: selectedProductData?.name || null,
-        product_rate: selectedProductData?.rate || null,
-        product_unit: selectedProductData?.unit || null,
-        product_hsn_sac: selectedProductData?.hsn_sac || null,
-        product_tax_rate: selectedProductData?.tax_rate || null,
+        selected_products: selectedProducts,
+        products_count: selectedProducts.length,
+        total_order_value: selectedProducts.reduce((sum, p) => sum + p.discountedPrice, 0),
         timestamp: new Date().toISOString(),
         isTrialMode,
         company_id: isTrialMode ? null : companyProfile?.company_id || null,
@@ -199,17 +319,6 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         user: user ? user.email : "anonymous",
         isAdmin: isTrialMode ? false : (companyProfile?.role === 'admin'),
       };
-      // const orderData = {
-      //   customerName: formData.customerName.trim(),
-      //   shippingAddress: formData.shippingAddress.trim(),
-      //   state: formData.state.trim(),
-      //   contactNumber: formData.contactNumber.trim(),
-      //   orderDetails: formData.orderDetails.trim(),
-      //   timestamp: new Date().toISOString(),
-      //   isTrialMode,
-      //   company_id: isTrialMode ? null : companyProfile?.company_id || null,
-      //   isCompanyIdpresent: !isTrialMode && !!companyProfile?.company_id,
-      // };
 
       // Send to webhook
       const response = await fetch(webhookUrl, {
@@ -219,13 +328,6 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         },
         body: JSON.stringify(orderData),
       });
-      // const response = await fetch("https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify(orderData),
-      // });
 
       // Get response data (if available)
       const result = await response.json();
@@ -271,15 +373,13 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         // Open PDF in a new tab for both trial and logged-in users
         if (pdfUrl) {
           setTimeout(() => {
-            // This is the standard and most reliable way to open a URL in a new tab.
-            // Note: It might be affected by browser pop-up blockers if not triggered by a direct user action.
             window.open(pdfUrl, '_blank');
             
             toast({
               title: "PDF Opened",
               description: "The sales order PDF has been opened in a new tab.",
             });
-          }, 1000); // A small delay gives the success toast time to appear.
+          }, 1000);
         }
         
         // Reset form
@@ -291,56 +391,18 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           orderDetails: "",
           freight_expense: "",
           cust_gst_number: "",
-          selectedProduct: "",
-          quantity: "",
-          discount: "",
-          discountedPrice: "",
         });
-        setSelectedProductData(null);
+        setSelectedProducts([]);
+        setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
         onClose();
-        
-        // Auto-download PDF for both trial and logged-in users
-        // if (pdfUrl) {
-        //   setTimeout(() => {
-        //     try {
-        //       // Create a temporary download link
-        //       const link = document.createElement('a');
-        //       link.href = pdfUrl;
-        //       const sanitizedCustomerName = formData.customerName.replace(/[^a-zA-Z0-9]/g, '_');
-        //       const dateString = new Date().toISOString().split('T')[0];
-        //       link.download = `sales_order_${sanitizedCustomerName}_${dateString}.pdf`;
-        //       link.style.display = 'none';
-              
-        //       // Add to DOM, click, and remove
-        //       document.body.appendChild(link);
-        //       link.click();
-        //       document.body.removeChild(link);
-              
-        //       toast({
-        //         title: "PDF Downloaded",
-        //         description: "Sales order PDF has been downloaded to your device.",
-        //       });
-        //     } catch (error) {
-        //       console.error('PDF download error:', error);
-        //       // Fallback: open in new tab
-        //       window.open(pdfUrl, '_blank');
-        //       toast({
-        //         title: "PDF Available",
-        //         description: "PDF opened in new tab. You can download it from there.",
-        //       });
-        //     }
-        //   }, 1000);
-        // }
       } else {
         throw new Error("Failed to submit order");
       }
-    } catch (error) {
-      // console.error("Order submission error:", error);
+    } catch (error: any) {
       console.log(error.message);
       toast({
         title: "Error",
-        // description: "Failed to submit sales order. Please try again.",
-        description : error.message,
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -350,7 +412,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <FileText className="w-5 h-5" />
@@ -366,13 +428,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                 <div className="space-y-2">
                   <h4 className="font-medium text-blue-900 text-sm sm:text-base">Trial Mode - Test Data Available</h4>
                   <div className="text-sm text-blue-700">
-                    <p><strong>Test Companies:</strong></p>
-                    <ul className="list-disc list-inside ml-2 space-y-1 text-xs sm:text-sm">
-                      {FAKE_COMPANIES.map(company => (
-                        <li key={company.id} className="break-words">{company.name} - {company.state}</li>
-                      ))}
-                    </ul>
-                    <p className="mt-2"><strong>Test Products:</strong></p>
+                    <p><strong>Test Products:</strong></p>
                     <ul className="list-disc list-inside ml-2 space-y-1 text-xs sm:text-sm">
                       {FAKE_PRODUCTS.map(product => (
                         <li key={product.id} className="break-words">{product.name} - ₹{product.rate.toLocaleString()}/{product.unit}</li>
@@ -466,73 +522,162 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
               </div>
               
               <div className="border-t pt-4">
-                <h4 className="font-medium mb-3 text-sm sm:text-base">Product Selection</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="selectedProduct">Select Product</Label>
-                    <Select value={formData.selectedProduct} onValueChange={(value) => handleInputChange('selectedProduct', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a product..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {products.map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            {product.name} - ₹{product.rate?.toLocaleString()}/{product.unit}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="quantity">Quantity</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      value={formData.quantity}
-                      onChange={(e) => handleInputChange('quantity', e.target.value)}
-                      placeholder="Enter quantity"
-                      min="1"
-                      disabled={!formData.selectedProduct}
-                    />
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-medium text-sm sm:text-base">Product Selection</h4>
+                  <Popover open={productSearchOpen} onOpenChange={setProductSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Plus className="w-4 h-4" />
+                        Add Product
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-96 p-0" align="end">
+                      <Command>
+                        <CommandInput placeholder="Search products..." />
+                        <CommandEmpty>No products found.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandList className="max-h-60">
+                            {products.map((product) => (
+                              <CommandItem
+                                key={product.id}
+                                onSelect={() => {
+                                  setProductFormData(prev => ({ ...prev, productId: product.id }));
+                                }}
+                                className="flex items-center justify-between cursor-pointer"
+                              >
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">{product.name}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    ₹{product.rate?.toLocaleString()}/{product.unit} • HSN: {product.hsn_sac}
+                                  </div>
+                                </div>
+                                {productFormData.productId === product.id && (
+                                  <Check className="w-4 h-4 text-primary" />
+                                )}
+                              </CommandItem>
+                            ))}
+                          </CommandList>
+                        </CommandGroup>
+                      </Command>
+                      
+                      {productFormData.productId && (
+                        <div className="p-4 border-t space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Quantity</Label>
+                              <Input
+                                type="number"
+                                value={productFormData.quantity}
+                                onChange={(e) => handleProductFormChange('quantity', e.target.value)}
+                                placeholder="Enter quantity"
+                                min="1"
+                                className="h-8"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Discount (%)</Label>
+                              <Input
+                                type="number"
+                                value={productFormData.discount}
+                                onChange={(e) => handleProductFormChange('discount', e.target.value)}
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                className="h-8"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <Label className="text-xs">Final Price (₹)</Label>
+                            <Input
+                              type="number"
+                              value={productFormData.discountedPrice}
+                              onChange={(e) => handleProductFormChange('discountedPrice', e.target.value)}
+                              placeholder="Enter final price"
+                              min="0"
+                              className="h-8"
+                            />
+                          </div>
+                          
+                          <div className="flex gap-2 pt-2">
+                            <Button 
+                              type="button" 
+                              onClick={editingProduct ? updateProduct : addProduct}
+                              size="sm" 
+                              className="flex-1"
+                              disabled={!productFormData.productId || !productFormData.quantity}
+                            >
+                              {editingProduct ? 'Update' : 'Add'} Product
+                            </Button>
+                            {editingProduct && (
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setEditingProduct(null);
+                                  setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
+                                  setProductSearchOpen(false);
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
                 </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <Label htmlFor="discount">Discount (%)</Label>
-                    <Input
-                      id="discount"
-                      type="number"
-                      value={formData.discount}
-                      onChange={(e) => handleInputChange('discount', e.target.value)}
-                      placeholder="Enter discount percentage"
-                      min="0"
-                      max="100"
-                      disabled={!formData.selectedProduct || !formData.quantity}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="discountedPrice">Total Amount</Label>
-                    <Input
-                      id="discountedPrice"
-                      value={formData.discountedPrice ? `₹${parseFloat(formData.discountedPrice).toLocaleString()}` : ''}
-                      placeholder="Calculated total amount"
-                      disabled
-                      className="bg-muted"
-                    />
-                  </div>
-                </div>
-                
-                {selectedProductData && (
-                  <div className="bg-muted/50 p-3 rounded-md mt-3">
-                    <h5 className="font-medium text-sm">Selected Product Details:</h5>
-                    <div className="text-sm text-muted-foreground mt-1 space-y-1">
-                      <p>Name: {selectedProductData.name}</p>
-                      <p>Rate: ₹{selectedProductData.rate?.toLocaleString()}/{selectedProductData.unit}</p>
-                      <p>HSN/SAC: {selectedProductData.hsn_sac}</p>
-                      <p>Tax Rate: {selectedProductData.tax_rate}%</p>
+
+                {selectedProducts.length > 0 && (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Selected Products</Label>
+                    {selectedProducts.map((product) => (
+                      <Card key={product.id} className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                              <div className="font-medium text-sm">{product.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                ₹{product.rate.toLocaleString()}/{product.unit}
+                              </div>
+                            </div>
+                            <div className="text-sm">
+                              <div>Qty: {product.quantity}</div>
+                              <div className="text-muted-foreground">Discount: {product.discount}%</div>
+                            </div>
+                            <div className="text-sm font-medium">
+                              Total: ₹{product.discountedPrice.toLocaleString()}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => editProduct(product.id)}
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeProduct(product.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                    
+                    <div className="border-t pt-3">
+                      <div className="font-medium text-right">
+                        Total Order Value: ₹{selectedProducts.reduce((sum, p) => sum + p.discountedPrice, 0).toLocaleString()}
+                      </div>
                     </div>
                   </div>
                 )}
