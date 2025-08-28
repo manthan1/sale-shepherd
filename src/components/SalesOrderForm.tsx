@@ -26,6 +26,10 @@ interface OrderFormData {
   orderDetails: string;
   freight_expense: string;
   cust_gst_number: string;
+  selectedProduct: string;
+  quantity: string;
+  discount: string;
+  discountedPrice: string;
 }
 
 // Fake data for trial mode
@@ -35,12 +39,12 @@ const FAKE_COMPANIES = [
 ];
 
 const FAKE_PRODUCTS = [
-  { id: "1", name: "Software License", rate: 50000, unit: "PCS", hsn_sac: "998313" },
-  { id: "2", name: "Hardware Setup", rate: 25000, unit: "SET", hsn_sac: "852520" },
-  { id: "3", name: "Training Service", rate: 15000, unit: "HR", hsn_sac: "998541" },
-  { id: "4", name: "Maintenance Contract", rate: 30000, unit: "YEAR", hsn_sac: "998315" },
-  { id: "5", name: "Consulting Service", rate: 20000, unit: "DAY", hsn_sac: "998542" },
-  { id: "6", name: "Custom Development", rate: 80000, unit: "PROJECT", hsn_sac: "998314" },
+  { id: "1", name: "Software License", rate: 50000, unit: "PCS", hsn_sac: "998313", tax_rate: 18 },
+  { id: "2", name: "Hardware Setup", rate: 25000, unit: "SET", hsn_sac: "852520", tax_rate: 18 },
+  { id: "3", name: "Training Service", rate: 15000, unit: "HR", hsn_sac: "998541", tax_rate: 18 },
+  { id: "4", name: "Maintenance Contract", rate: 30000, unit: "YEAR", hsn_sac: "998315", tax_rate: 18 },
+  { id: "5", name: "Consulting Service", rate: 20000, unit: "DAY", hsn_sac: "998542", tax_rate: 18 },
+  { id: "6", name: "Custom Development", rate: 80000, unit: "PROJECT", hsn_sac: "998314", tax_rate: 18 },
 ];
 
 const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormProps) => {
@@ -49,6 +53,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [companyProfile, setCompanyProfile] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [selectedProductData, setSelectedProductData] = useState<any>(null);
   const [formData, setFormData] = useState<OrderFormData>({
     customerName: "",
     shippingAddress: "",
@@ -57,13 +63,25 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     orderDetails: "",
     freight_expense: "",
     cust_gst_number: "",
+    selectedProduct: "",
+    quantity: "",
+    discount: "",
+    discountedPrice: "",
   });
 
   useEffect(() => {
     if (user && !isTrialMode) {
       fetchCompanyProfile();
+    } else if (isTrialMode) {
+      setProducts(FAKE_PRODUCTS);
     }
   }, [user, isTrialMode]);
+
+  useEffect(() => {
+    if (companyProfile?.company_id) {
+      fetchProducts();
+    }
+  }, [companyProfile]);
 
   const fetchCompanyProfile = async () => {
     try {
@@ -81,18 +99,78 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('company_id', companyProfile?.company_id);
+      
+      if (productsData) {
+        setProducts(productsData);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
   const handleInputChange = (field: keyof OrderFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // If product is selected, update selected product data and calculate discounted price
+    if (field === 'selectedProduct' && value) {
+      const product = products.find(p => p.id === value);
+      setSelectedProductData(product);
+      
+      // Reset dependent fields when product changes
+      setFormData(prev => ({ 
+        ...prev, 
+        [field]: value,
+        quantity: "",
+        discount: "",
+        discountedPrice: ""
+      }));
+    }
+    
+    // Calculate discounted price when quantity or discount changes
+    if ((field === 'quantity' || field === 'discount') && selectedProductData) {
+      const quantity = field === 'quantity' ? parseFloat(value) || 0 : parseFloat(formData.quantity) || 0;
+      const discount = field === 'discount' ? parseFloat(value) || 0 : parseFloat(formData.discount) || 0;
+      
+      if (quantity > 0) {
+        const totalAmount = selectedProductData.rate * quantity;
+        const discountedAmount = totalAmount - (totalAmount * discount / 100);
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          [field]: value,
+          discountedPrice: discountedAmount.toFixed(2)
+        }));
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate required fields
-    if (!formData.customerName.trim() || !formData.orderDetails.trim()) {
+    if (!formData.customerName.trim()) {
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in Customer Name and Order Details",
+        description: "Please fill in Customer Name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate that either order details OR product selection is filled
+    const hasOrderDetails = formData.orderDetails.trim();
+    const hasProductSelection = formData.selectedProduct && formData.quantity;
+    
+    if (!hasOrderDetails && !hasProductSelection) {
+      toast({
+        title: "Missing Required Fields",
+        description: "Please fill in either Order Details OR select a product with quantity",
         variant: "destructive",
       });
       return;
@@ -109,6 +187,11 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
       const orderData = {
         ...formData, // This will include all fields, even if blank
         cust_gst_number: formData.cust_gst_number.trim() || null,
+        product_name: selectedProductData?.name || null,
+        product_rate: selectedProductData?.rate || null,
+        product_unit: selectedProductData?.unit || null,
+        product_hsn_sac: selectedProductData?.hsn_sac || null,
+        product_tax_rate: selectedProductData?.tax_rate || null,
         timestamp: new Date().toISOString(),
         isTrialMode,
         company_id: isTrialMode ? null : companyProfile?.company_id || null,
@@ -208,7 +291,12 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           orderDetails: "",
           freight_expense: "",
           cust_gst_number: "",
+          selectedProduct: "",
+          quantity: "",
+          discount: "",
+          discountedPrice: "",
         });
+        setSelectedProductData(null);
         onClose();
         
         // Auto-download PDF for both trial and logged-in users
@@ -363,18 +451,91 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           <Card>
             <CardHeader className="pb-3 sm:pb-6">
               <CardTitle className="text-base sm:text-lg">Order Information</CardTitle>
+              <p className="text-sm text-muted-foreground">Fill either Order Details OR Product Selection below</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="orderDetails">Order Details *</Label>
+                <Label htmlFor="orderDetails">Order Details</Label>
                 <Textarea
                   id="orderDetails"
                   value={formData.orderDetails}
                   onChange={(e) => handleInputChange('orderDetails', e.target.value)}
-                  placeholder="Enter detailed order information..."
+                  placeholder="Enter detailed order information... (OR use product selection below)"
                   rows={4}
-                  required
                 />
+              </div>
+              
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-3 text-sm sm:text-base">Product Selection</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="selectedProduct">Select Product</Label>
+                    <Select value={formData.selectedProduct} onValueChange={(value) => handleInputChange('selectedProduct', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a product..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {products.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            {product.name} - ₹{product.rate?.toLocaleString()}/{product.unit}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="quantity">Quantity</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      value={formData.quantity}
+                      onChange={(e) => handleInputChange('quantity', e.target.value)}
+                      placeholder="Enter quantity"
+                      min="1"
+                      disabled={!formData.selectedProduct}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <Label htmlFor="discount">Discount (%)</Label>
+                    <Input
+                      id="discount"
+                      type="number"
+                      value={formData.discount}
+                      onChange={(e) => handleInputChange('discount', e.target.value)}
+                      placeholder="Enter discount percentage"
+                      min="0"
+                      max="100"
+                      disabled={!formData.selectedProduct || !formData.quantity}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="discountedPrice">Total Amount</Label>
+                    <Input
+                      id="discountedPrice"
+                      value={formData.discountedPrice ? `₹${parseFloat(formData.discountedPrice).toLocaleString()}` : ''}
+                      placeholder="Calculated total amount"
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                </div>
+                
+                {selectedProductData && (
+                  <div className="bg-muted/50 p-3 rounded-md mt-3">
+                    <h5 className="font-medium text-sm">Selected Product Details:</h5>
+                    <div className="text-sm text-muted-foreground mt-1 space-y-1">
+                      <p>Name: {selectedProductData.name}</p>
+                      <p>Rate: ₹{selectedProductData.rate?.toLocaleString()}/{selectedProductData.unit}</p>
+                      <p>HSN/SAC: {selectedProductData.hsn_sac}</p>
+                      <p>Tax Rate: {selectedProductData.tax_rate}%</p>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div>
