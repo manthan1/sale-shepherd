@@ -273,6 +273,18 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     setSelectedProducts(prev => prev.filter(p => p.id !== productId));
   };
 
+  const formatSelectedProductsText = (products: SelectedProduct[]): string => {
+    return products.map(product => {
+      if (product.discount > 0) {
+        return `${product.quantity} ${product.name} - ${product.discount}% discount`;
+      } else if (product.discountedPrice !== product.rate * product.quantity) {
+        return `${product.quantity} ${product.name} - ${product.discountedPrice} rupees discountedPrice`;
+      } else {
+        return `${product.quantity} ${product.name}`;
+      }
+    }).join('\n');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -306,8 +318,12 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         : "https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97";
       
       // Prepare order data
+      const formattedProductsText = selectedProducts.length > 0 ? formatSelectedProductsText(selectedProducts) : '';
+      const combinedOrderDetails = [formData.orderDetails.trim(), formattedProductsText].filter(Boolean).join('\n\n');
+      
       const orderData = {
         ...formData,
+        orderDetails: combinedOrderDetails,
         cust_gst_number: formData.cust_gst_number.trim() || null,
         selected_products: selectedProducts,
         products_count: selectedProducts.length,
