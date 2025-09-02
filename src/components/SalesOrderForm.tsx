@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
@@ -543,189 +543,267 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                       <h4 className="font-medium text-sm sm:text-base">Product Selection</h4>
                       <p className="text-xs text-muted-foreground mt-1">Search and add multiple products with pricing</p>
                     </div>
-                    <Popover open={productSearchOpen} onOpenChange={setProductSearchOpen}>
-                      <PopoverTrigger asChild>
+                    <Dialog open={productSearchOpen} onOpenChange={setProductSearchOpen}>
+                      <DialogTrigger asChild>
                         <Button variant="outline" size="sm" className="gap-2 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border-primary/20">
                           <Plus className="w-4 h-4" />
                           {editingProduct ? 'Edit Product' : 'Add Product'}
                         </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[400px] sm:w-[450px] p-0" align="end">
-                        <div className="bg-gradient-to-b from-background to-muted/20 border-b p-3">
-                          <h4 className="font-medium text-sm">
-                            {editingProduct ? 'Edit Product Details' : 'Select & Configure Product'}
-                          </h4>
-                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-5xl w-[95vw] max-h-[85vh] overflow-hidden p-0">
+                        <DialogHeader className="p-6 pb-0">
+                          <DialogTitle className="text-lg font-semibold">
+                            {editingProduct ? "Edit Product" : "Add Product to Order"}
+                          </DialogTitle>
+                        </DialogHeader>
                         
-                        <Command className="border-0">
-                          <CommandInput 
-                            placeholder="🔍 Search products by name..." 
-                            className="border-0 border-b rounded-none focus:ring-0"
-                          />
-                          <CommandEmpty className="py-6 text-center text-muted-foreground">
-                            <div className="flex flex-col items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                <Plus className="w-4 h-4" />
-                              </div>
-                              No products found
+                        {/* Responsive Layout: Side-by-side on desktop, stacked on mobile */}
+                        <div className="flex flex-col lg:flex-row h-full max-h-[calc(85vh-80px)]">
+                          {/* Product Search Section */}
+                          <div className="flex-1 lg:w-1/2 border-b lg:border-b-0 lg:border-r border-border">
+                            <div className="p-4 border-b bg-muted/30">
+                              <Label className="text-sm font-medium text-muted-foreground">
+                                Step 1: Select Product
+                              </Label>
                             </div>
-                          </CommandEmpty>
-                          <CommandGroup>
-                            <CommandList className="max-h-48">
-                              {products.map((product) => (
-                                <CommandItem
-                                  key={product.id}
-                                  onSelect={() => {
-                                    setProductFormData(prev => ({ ...prev, productId: product.id }));
-                                  }}
-                                  className="flex items-start justify-between cursor-pointer p-3 hover:bg-muted/50"
-                                >
-                                  <div className="flex-1 space-y-1">
-                                    <div className="font-medium text-sm text-foreground">{product.name}</div>
-                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                      <span className="font-medium text-primary">₹{product.rate?.toLocaleString()}</span>
-                                      <span>per {product.unit}</span>
-                                      <span className="bg-muted px-1.5 py-0.5 rounded text-xs">HSN: {product.hsn_sac}</span>
-                                    </div>
-                                    {product.tax_rate && (
-                                      <div className="text-xs text-muted-foreground">Tax: {product.tax_rate}%</div>
-                                    )}
-                                  </div>
-                                  {productFormData.productId === product.id && (
-                                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                      <Check className="w-3 h-3 text-primary" />
-                                    </div>
-                                  )}
-                                </CommandItem>
-                              ))}
-                            </CommandList>
-                          </CommandGroup>
-                        </Command>
-                        
-                        {productFormData.productId && (
-                          <div className="p-4 border-t bg-muted/20 space-y-4">
-                            {(() => {
-                              const selectedProduct = products.find(p => p.id === productFormData.productId);
-                              return selectedProduct && (
-                                <div className="bg-background rounded-lg p-3 border">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                                    <span className="font-medium text-sm">{selectedProduct.name}</span>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Base Rate: ₹{selectedProduct.rate?.toLocaleString()}/{selectedProduct.unit}
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <Label className="text-xs font-medium text-foreground">Quantity *</Label>
-                                <Input
-                                  type="number"
-                                  value={productFormData.quantity}
-                                  onChange={(e) => handleProductFormChange('quantity', e.target.value)}
-                                  placeholder="Enter qty"
-                                  min="1"
-                                  className="h-9 mt-1"
+                            <div className="h-full max-h-[400px] lg:max-h-[500px] overflow-hidden">
+                              <Command className="h-full">
+                                <CommandInput 
+                                  placeholder="Search products by name, HSN, or rate..." 
+                                  className="h-12 border-0 border-b rounded-none"
                                 />
-                              </div>
-                              <div>
-                                <Label className="text-xs font-medium text-foreground">Discount (%)</Label>
-                                <Input
-                                  type="number"
-                                  value={productFormData.discount}
-                                  onChange={(e) => handleProductFormChange('discount', e.target.value)}
-                                  placeholder="0"
-                                  min="0"
-                                  max="100"
-                                  className="h-9 mt-1"
-                                />
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <Label className="text-xs font-medium text-foreground">Discounted Price (₹) *</Label>
-                              <Input
-                                type="number"
-                                value={productFormData.discountedPrice}
-                                onChange={(e) => handleProductFormChange('discountedPrice', e.target.value)}
-                                placeholder="Final amount after discount"
-                                min="0"
-                                className="h-9 mt-1"
-                              />
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Enter the final price or use discount % above
-                              </p>
-                            </div>
-                            
-                            {productFormData.quantity && productFormData.productId && (() => {
-                              const selectedProduct = products.find(p => p.id === productFormData.productId);
-                              const quantity = parseFloat(productFormData.quantity) || 0;
-                              const baseTotal = selectedProduct ? selectedProduct.rate * quantity : 0;
-                              const finalPrice = parseFloat(productFormData.discountedPrice) || baseTotal;
-                              const savings = baseTotal - finalPrice;
-                              
-                              return baseTotal > 0 && (
-                                <div className="bg-primary/5 rounded-lg p-3 space-y-1">
-                                  <div className="flex justify-between text-xs">
-                                    <span>Base Amount:</span>
-                                    <span>₹{baseTotal.toLocaleString()}</span>
-                                  </div>
-                                  {savings > 0 && (
-                                    <div className="flex justify-between text-xs text-green-600">
-                                      <span>Savings:</span>
-                                      <span>-₹{savings.toLocaleString()}</span>
+                                <CommandList className="max-h-none">
+                                  <CommandEmpty className="py-8 text-center text-muted-foreground">
+                                    <div className="space-y-2">
+                                      <div>No products found.</div>
+                                      <div className="text-xs">Try adjusting your search terms</div>
                                     </div>
-                                  )}
-                                  <div className="flex justify-between text-sm font-medium border-t pt-1">
-                                    <span>Final Amount:</span>
-                                    <span className="text-primary">₹{finalPrice.toLocaleString()}</span>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                            
-                            <div className="flex gap-2 pt-2">
-                              <Button 
-                                type="button" 
-                                onClick={editingProduct ? updateProduct : addProduct}
-                                size="sm" 
-                                className="flex-1"
-                                disabled={!productFormData.productId || !productFormData.quantity}
-                              >
-                                {editingProduct ? (
-                                  <>
-                                    <Check className="w-3 h-3 mr-1" />
-                                    Update Product
-                                  </>
-                                ) : (
-                                  <>
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    Add to Order
-                                  </>
-                                )}
-                              </Button>
-                              {editingProduct && (
-                                <Button 
-                                  type="button" 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingProduct(null);
-                                    setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
-                                    setProductSearchOpen(false);
-                                  }}
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
-                              )}
+                                  </CommandEmpty>
+                                  <CommandGroup className="p-0">
+                                    <div className="overflow-y-auto max-h-[320px] lg:max-h-[420px]">
+                                      {products.map((product) => (
+                                        <CommandItem
+                                          key={product.id}
+                                          value={`${product.name} ${product.hsn_sac} ${product.rate}`}
+                                          onSelect={() => {
+                                            setProductFormData(prev => ({
+                                              ...prev,
+                                              productId: product.id,
+                                              quantity: prev.quantity || "1",
+                                              discount: prev.discount || "0",
+                                              discountedPrice: prev.discountedPrice || (product.rate * (parseFloat(prev.quantity) || 1)).toString(),
+                                            }));
+                                          }}
+                                          className="flex items-start justify-between cursor-pointer p-4 hover:bg-muted/70 border-0 rounded-none border-b last:border-b-0"
+                                        >
+                                          <div className="flex-1 space-y-2 pr-3">
+                                            <div className="font-medium text-sm text-foreground leading-tight">
+                                              {product.name}
+                                            </div>
+                                            <div className="flex items-center flex-wrap gap-3 text-xs">
+                                              <span className="font-semibold text-primary text-sm">
+                                                ₹{product.rate?.toLocaleString()}
+                                              </span>
+                                              <span className="text-muted-foreground">per {product.unit}</span>
+                                              <span className="bg-muted px-2 py-0.5 rounded-full text-xs font-medium">
+                                                HSN: {product.hsn_sac}
+                                              </span>
+                                            </div>
+                                            {product.tax_rate && (
+                                              <div className="text-xs text-muted-foreground">
+                                                Tax Rate: {product.tax_rate}%
+                                              </div>
+                                            )}
+                                          </div>
+                                          {productFormData.productId === product.id && (
+                                            <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                                              <Check className="w-4 h-4 text-primary" />
+                                            </div>
+                                          )}
+                                        </CommandItem>
+                                      ))}
+                                    </div>
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
                             </div>
                           </div>
-                        )}
-                      </PopoverContent>
-                    </Popover>
+                          
+                          {/* Quantity & Details Form Section */}
+                          <div className="flex-1 lg:w-1/2 flex flex-col">
+                            <div className="p-4 border-b bg-muted/30">
+                              <Label className="text-sm font-medium text-muted-foreground">
+                                Step 2: Enter Quantity & Pricing
+                              </Label>
+                            </div>
+                            
+                            {!productFormData.productId ? (
+                              <div className="flex-1 flex items-center justify-center p-8 text-center">
+                                <div className="space-y-3 text-muted-foreground max-w-sm">
+                                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                                    <Plus className="w-8 h-8" />
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-foreground">Select a Product</div>
+                                    <div className="text-sm mt-1">
+                                      Choose a product from the list to configure quantity and pricing
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                {/* Selected Product Info */}
+                                {(() => {
+                                  const selectedProduct = products.find(p => p.id === productFormData.productId);
+                                  return selectedProduct && (
+                                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                                      <div className="flex items-start gap-3">
+                                        <div className="w-3 h-3 bg-primary rounded-full mt-1 flex-shrink-0"></div>
+                                        <div className="flex-1 space-y-1">
+                                          <div className="font-semibold text-foreground">{selectedProduct.name}</div>
+                                          <div className="text-sm text-muted-foreground">
+                                            Base Rate: ₹{selectedProduct.rate?.toLocaleString()}/{selectedProduct.unit}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">
+                                            HSN: {selectedProduct.hsn_sac} • Tax: {selectedProduct.tax_rate}%
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                                
+                                {/* Form Fields */}
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label className="text-sm font-medium text-foreground">Quantity *</Label>
+                                      <Input
+                                        type="number"
+                                        value={productFormData.quantity}
+                                        onChange={(e) => handleProductFormChange('quantity', e.target.value)}
+                                        placeholder="Enter quantity"
+                                        min="1"
+                                        step="0.01"
+                                        className="h-11"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="text-sm font-medium text-foreground">Discount (%)</Label>
+                                      <Input
+                                        type="number"
+                                        value={productFormData.discount}
+                                        onChange={(e) => handleProductFormChange('discount', e.target.value)}
+                                        placeholder="0"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        className="h-11"
+                                      />
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-foreground">Final Price (₹) *</Label>
+                                    <Input
+                                      type="number"
+                                      value={productFormData.discountedPrice}
+                                      onChange={(e) => handleProductFormChange('discountedPrice', e.target.value)}
+                                      placeholder="Enter final amount after discount"
+                                      min="0"
+                                      step="0.01"
+                                      className="h-11"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                      This will be the final line amount for this product
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {/* Calculation Summary */}
+                                {productFormData.quantity && productFormData.productId && (() => {
+                                  const selectedProduct = products.find(p => p.id === productFormData.productId);
+                                  const quantity = parseFloat(productFormData.quantity) || 0;
+                                  const baseTotal = selectedProduct ? selectedProduct.rate * quantity : 0;
+                                  const finalPrice = parseFloat(productFormData.discountedPrice) || baseTotal;
+                                  const savings = baseTotal - finalPrice;
+                                  const discountPercent = baseTotal > 0 ? (savings / baseTotal) * 100 : 0;
+                                  
+                                  return baseTotal > 0 && (
+                                    <div className="bg-background border rounded-lg p-4 space-y-3">
+                                      <div className="text-sm font-medium text-foreground border-b pb-2">
+                                        Calculation Summary
+                                      </div>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Base Amount:</span>
+                                          <span className="font-medium">₹{baseTotal.toLocaleString()}</span>
+                                        </div>
+                                        {savings > 0 && (
+                                          <>
+                                            <div className="flex justify-between text-green-600">
+                                              <span>Discount ({discountPercent.toFixed(1)}%):</span>
+                                              <span className="font-medium">-₹{savings.toLocaleString()}</span>
+                                            </div>
+                                            <div className="border-t pt-2"></div>
+                                          </>
+                                        )}
+                                        <div className="flex justify-between text-lg font-semibold border-t pt-2">
+                                          <span>Final Amount:</span>
+                                          <span className="text-primary">₹{finalPrice.toLocaleString()}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            )}
+                            
+                            {/* Action Buttons */}
+                            {productFormData.productId && (
+                              <div className="border-t p-4 bg-muted/20">
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                  {editingProduct && (
+                                    <Button 
+                                      type="button" 
+                                      variant="outline" 
+                                      className="flex-1 sm:flex-none"
+                                      onClick={() => {
+                                        setEditingProduct(null);
+                                        setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
+                                        setProductSearchOpen(false);
+                                      }}
+                                    >
+                                      <X className="w-4 h-4 mr-2" />
+                                      Cancel
+                                    </Button>
+                                  )}
+                                  <Button 
+                                    type="button" 
+                                    onClick={editingProduct ? updateProduct : addProduct}
+                                    className="flex-1"
+                                    disabled={!productFormData.productId || !productFormData.quantity}
+                                  >
+                                    {editingProduct ? (
+                                      <>
+                                        <Check className="w-4 h-4 mr-2" />
+                                        Update Product
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Add to Order
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
 
                 {selectedProducts.length > 0 && (
