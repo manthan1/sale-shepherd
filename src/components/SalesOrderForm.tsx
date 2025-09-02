@@ -550,15 +550,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                           {editingProduct ? 'Edit Product' : 'Add Product'}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent 
-                        className="w-[92vw] sm:w-[420px] lg:w-[480px] max-h-[70vh] overflow-y-auto p-0 z-[60]" 
-                        align="start" 
-                        side="bottom"
-                        sideOffset={8}
-                        avoidCollisions={true}
-                        collisionPadding={12}
-                        onOpenAutoFocus={(e) => e.preventDefault()}
-                      >
+                      <PopoverContent className="w-[400px] sm:w-[450px] p-0" align="end">
                         <div className="bg-gradient-to-b from-background to-muted/20 border-b p-3">
                           <h4 className="font-medium text-sm">
                             {editingProduct ? 'Edit Product Details' : 'Select & Configure Product'}
