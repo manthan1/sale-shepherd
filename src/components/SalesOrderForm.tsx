@@ -551,11 +551,12 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent 
-                        className="w-[320px] sm:w-[400px] lg:w-[450px] p-0 z-50" 
+                        className="w-[92vw] sm:w-[420px] lg:w-[480px] max-h-[70vh] overflow-y-auto p-0 z-[60]" 
                         align="start" 
                         side="bottom"
-                        sideOffset={5}
+                        sideOffset={8}
                         avoidCollisions={true}
+                        collisionPadding={12}
                         onOpenAutoFocus={(e) => e.preventDefault()}
                       >
                         <div className="bg-gradient-to-b from-background to-muted/20 border-b p-3">
