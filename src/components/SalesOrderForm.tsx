@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -543,192 +543,189 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                       <h4 className="font-medium text-sm sm:text-base">Product Selection</h4>
                       <p className="text-xs text-muted-foreground mt-1">Search and add multiple products with pricing</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border-primary/20"
-                      onClick={() => setProductSearchOpen(true)}
-                    >
-                      <Plus className="w-4 h-4" />
-                      {editingProduct ? 'Edit Product' : 'Add Product'}
-                    </Button>
-
-                    <Sheet open={productSearchOpen} onOpenChange={setProductSearchOpen}>
-                      <SheetContent side="bottom" className="inset-0 h-screen w-full sm:h-[85vh] sm:w-[720px] sm:ml-auto p-0 overflow-hidden">
-                        <div className="flex h-full flex-col">
-                          <SheetHeader className="sticky top-0 bg-background border-b p-4">
-                            <SheetTitle className="text-base sm:text-lg">
-                              {editingProduct ? 'Edit Product Details' : 'Select & Configure Product'}
-                            </SheetTitle>
-                          </SheetHeader>
-
-                          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                            <Command className="border rounded-md">
-                              <CommandInput
-                                placeholder="Search products by name..."
-                                className="border-0 focus:ring-0"
-                              />
-                              <CommandEmpty className="py-6 text-center text-muted-foreground">
-                                <div className="flex flex-col items-center gap-2">
-                                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                    <Plus className="w-4 h-4" />
-                                  </div>
-                                  No products found
-                                </div>
-                              </CommandEmpty>
-                              <CommandGroup>
-                                <CommandList className="max-h-64 overflow-y-auto">
-                                  {products.map((product) => (
-                                    <CommandItem
-                                      key={product.id}
-                                      onSelect={() => {
-                                        setProductFormData(prev => ({ ...prev, productId: product.id }));
-                                      }}
-                                      className="flex items-start justify-between cursor-pointer p-3 hover:bg-muted/50"
-                                    >
-                                      <div className="flex-1 space-y-1">
-                                        <div className="font-medium text-sm text-foreground">{product.name}</div>
-                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                          <span className="font-medium text-primary">₹{product.rate?.toLocaleString()}</span>
-                                          <span>per {product.unit}</span>
-                                          <span className="bg-muted px-1.5 py-0.5 rounded text-xs">HSN: {product.hsn_sac}</span>
-                                        </div>
-                                        {product.tax_rate && (
-                                          <div className="text-xs text-muted-foreground">Tax: {product.tax_rate}%</div>
-                                        )}
-                                      </div>
-                                      {productFormData.productId === product.id && (
-                                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                          <Check className="w-3 h-3 text-primary" />
-                                        </div>
-                                      )}
-                                    </CommandItem>
-                                  ))}
-                                </CommandList>
-                              </CommandGroup>
-                            </Command>
-
-                            {productFormData.productId && (
-                              <div className="space-y-4">
-                                {(() => {
-                                  const selectedProduct = products.find(p => p.id === productFormData.productId);
-                                  return selectedProduct && (
-                                    <div className="bg-background rounded-lg p-3 border">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                                        <span className="font-medium text-sm">{selectedProduct.name}</span>
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        Base Rate: ₹{selectedProduct.rate?.toLocaleString()}/{selectedProduct.unit}
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <Label className="text-xs font-medium text-foreground">Quantity *</Label>
-                                    <Input
-                                      type="number"
-                                      value={productFormData.quantity}
-                                      onChange={(e) => handleProductFormChange('quantity', e.target.value)}
-                                      placeholder="Enter qty"
-                                      min="1"
-                                      className="h-9 mt-1"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs font-medium text-foreground">Discount (%)</Label>
-                                    <Input
-                                      type="number"
-                                      value={productFormData.discount}
-                                      onChange={(e) => handleProductFormChange('discount', e.target.value)}
-                                      placeholder="0"
-                                      min="0"
-                                      max="100"
-                                      className="h-9 mt-1"
-                                    />
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <Label className="text-xs font-medium text-foreground">Discounted Price (₹) *</Label>
-                                  <Input
-                                    type="number"
-                                    value={productFormData.discountedPrice}
-                                    onChange={(e) => handleProductFormChange('discountedPrice', e.target.value)}
-                                    placeholder="Final amount after discount"
-                                    min="0"
-                                    className="h-9 mt-1"
-                                  />
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Enter the final price or use discount % above
-                                  </p>
-                                </div>
-
-                                {productFormData.quantity && productFormData.productId && (() => {
-                                  const selectedProduct = products.find(p => p.id === productFormData.productId);
-                                  const quantity = parseFloat(productFormData.quantity) || 0;
-                                  const baseTotal = selectedProduct ? selectedProduct.rate * quantity : 0;
-                                  const finalPrice = parseFloat(productFormData.discountedPrice) || baseTotal;
-                                  const savings = baseTotal - finalPrice;
-
-                                  return baseTotal > 0 && (
-                                    <div className="bg-primary/5 rounded-lg p-3 space-y-1">
-                                      <div className="flex justify-between text-xs">
-                                        <span>Base Amount:</span>
-                                        <span>₹{baseTotal.toLocaleString()}</span>
-                                      </div>
-                                      {savings > 0 && (
-                                        <div className="flex justify-between text-xs text-green-600">
-                                          <span>Savings:</span>
-                                          <span>-₹{savings.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      <div className="flex justify-between text-sm font-medium border-t pt-1">
-                                        <span>Final Amount:</span>
-                                        <span className="text-primary">₹{finalPrice.toLocaleString()}</span>
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
+                    <Popover open={productSearchOpen} onOpenChange={setProductSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border-primary/20">
+                          <Plus className="w-4 h-4" />
+                          {editingProduct ? 'Edit Product' : 'Add Product'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] sm:w-[450px] p-0" align="end">
+                        <div className="bg-gradient-to-b from-background to-muted/20 border-b p-3">
+                          <h4 className="font-medium text-sm">
+                            {editingProduct ? 'Edit Product Details' : 'Select & Configure Product'}
+                          </h4>
+                        </div>
+                        
+                        <Command className="border-0">
+                          <CommandInput 
+                            placeholder="🔍 Search products by name..." 
+                            className="border-0 border-b rounded-none focus:ring-0"
+                          />
+                          <CommandEmpty className="py-6 text-center text-muted-foreground">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                <Plus className="w-4 h-4" />
                               </div>
-                            )}
-                          </div>
-
-                          <div className="sticky bottom-0 bg-background border-t p-4">
-                            <div className="flex gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setProductSearchOpen(false)}
-                                className="w-1/3 sm:w-auto"
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                type="button"
+                              No products found
+                            </div>
+                          </CommandEmpty>
+                          <CommandGroup>
+                            <CommandList className="max-h-48">
+                              {products.map((product) => (
+                                <CommandItem
+                                  key={product.id}
+                                  onSelect={() => {
+                                    setProductFormData(prev => ({ ...prev, productId: product.id }));
+                                  }}
+                                  className="flex items-start justify-between cursor-pointer p-3 hover:bg-muted/50"
+                                >
+                                  <div className="flex-1 space-y-1">
+                                    <div className="font-medium text-sm text-foreground">{product.name}</div>
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                      <span className="font-medium text-primary">₹{product.rate?.toLocaleString()}</span>
+                                      <span>per {product.unit}</span>
+                                      <span className="bg-muted px-1.5 py-0.5 rounded text-xs">HSN: {product.hsn_sac}</span>
+                                    </div>
+                                    {product.tax_rate && (
+                                      <div className="text-xs text-muted-foreground">Tax: {product.tax_rate}%</div>
+                                    )}
+                                  </div>
+                                  {productFormData.productId === product.id && (
+                                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                      <Check className="w-3 h-3 text-primary" />
+                                    </div>
+                                  )}
+                                </CommandItem>
+                              ))}
+                            </CommandList>
+                          </CommandGroup>
+                        </Command>
+                        
+                        {productFormData.productId && (
+                          <div className="p-4 border-t bg-muted/20 space-y-4">
+                            {(() => {
+                              const selectedProduct = products.find(p => p.id === productFormData.productId);
+                              return selectedProduct && (
+                                <div className="bg-background rounded-lg p-3 border">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                                    <span className="font-medium text-sm">{selectedProduct.name}</span>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Base Rate: ₹{selectedProduct.rate?.toLocaleString()}/{selectedProduct.unit}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs font-medium text-foreground">Quantity *</Label>
+                                <Input
+                                  type="number"
+                                  value={productFormData.quantity}
+                                  onChange={(e) => handleProductFormChange('quantity', e.target.value)}
+                                  placeholder="Enter qty"
+                                  min="1"
+                                  className="h-9 mt-1"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs font-medium text-foreground">Discount (%)</Label>
+                                <Input
+                                  type="number"
+                                  value={productFormData.discount}
+                                  onChange={(e) => handleProductFormChange('discount', e.target.value)}
+                                  placeholder="0"
+                                  min="0"
+                                  max="100"
+                                  className="h-9 mt-1"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <Label className="text-xs font-medium text-foreground">Discounted Price (₹) *</Label>
+                              <Input
+                                type="number"
+                                value={productFormData.discountedPrice}
+                                onChange={(e) => handleProductFormChange('discountedPrice', e.target.value)}
+                                placeholder="Final amount after discount"
+                                min="0"
+                                className="h-9 mt-1"
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Enter the final price or use discount % above
+                              </p>
+                            </div>
+                            
+                            {productFormData.quantity && productFormData.productId && (() => {
+                              const selectedProduct = products.find(p => p.id === productFormData.productId);
+                              const quantity = parseFloat(productFormData.quantity) || 0;
+                              const baseTotal = selectedProduct ? selectedProduct.rate * quantity : 0;
+                              const finalPrice = parseFloat(productFormData.discountedPrice) || baseTotal;
+                              const savings = baseTotal - finalPrice;
+                              
+                              return baseTotal > 0 && (
+                                <div className="bg-primary/5 rounded-lg p-3 space-y-1">
+                                  <div className="flex justify-between text-xs">
+                                    <span>Base Amount:</span>
+                                    <span>₹{baseTotal.toLocaleString()}</span>
+                                  </div>
+                                  {savings > 0 && (
+                                    <div className="flex justify-between text-xs text-green-600">
+                                      <span>Savings:</span>
+                                      <span>-₹{savings.toLocaleString()}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between text-sm font-medium border-t pt-1">
+                                    <span>Final Amount:</span>
+                                    <span className="text-primary">₹{finalPrice.toLocaleString()}</span>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                            
+                            <div className="flex gap-2 pt-2">
+                              <Button 
+                                type="button" 
                                 onClick={editingProduct ? updateProduct : addProduct}
+                                size="sm" 
+                                className="flex-1"
                                 disabled={!productFormData.productId || !productFormData.quantity}
-                                className="flex-1 sm:w-auto"
                               >
                                 {editingProduct ? (
                                   <>
-                                    <Check className="w-4 h-4 mr-2" />
+                                    <Check className="w-3 h-3 mr-1" />
                                     Update Product
                                   </>
                                 ) : (
                                   <>
-                                    <Plus className="w-4 h-4 mr-2" />
+                                    <Plus className="w-3 h-3 mr-1" />
                                     Add to Order
                                   </>
                                 )}
                               </Button>
+                              {editingProduct && (
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingProduct(null);
+                                    setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
+                                    setProductSearchOpen(false);
+                                  }}
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              )}
                             </div>
                           </div>
-                        </div>
-                      </SheetContent>
-                    </Sheet>
+                        )}
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                 {selectedProducts.length > 0 && (
