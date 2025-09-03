@@ -428,13 +428,17 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <FileText className="w-5 h-5" />
-            {isTrialMode ? "Try Sales Order Generation" : "Generate Sales Order"}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] lg:w-[80vw] xl:max-w-4xl mx-auto max-h-[95vh] overflow-hidden flex flex-col p-0">
+        <div className="flex-shrink-0 p-4 sm:p-6 border-b">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <FileText className="w-5 h-5" />
+              {isTrialMode ? "Try Sales Order Generation" : "Generate Sales Order"}
+            </DialogTitle>
+          </DialogHeader>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
 
         {isTrialMode && (
           <Card className="bg-blue-50 border-blue-200">
@@ -550,23 +554,25 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                           {editingProduct ? 'Edit Product' : 'Add Product'}
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-5xl w-[95vw] max-h-[85vh] overflow-hidden p-0">
-                        <DialogHeader className="p-6 pb-0">
-                          <DialogTitle className="text-lg font-semibold">
-                            {editingProduct ? "Edit Product" : "Add Product to Order"}
-                          </DialogTitle>
-                        </DialogHeader>
+                      <DialogContent className="max-w-6xl w-[96vw] sm:w-[92vw] lg:w-[85vw] xl:max-w-5xl mx-auto max-h-[90vh] overflow-hidden flex flex-col p-0 m-2 sm:m-4">
+                        <div className="flex-shrink-0 px-4 py-3 sm:px-6 sm:py-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                          <DialogHeader>
+                            <DialogTitle className="text-lg font-semibold pr-8">
+                              {editingProduct ? "Edit Product" : "Add Product to Order"}
+                            </DialogTitle>
+                          </DialogHeader>
+                        </div>
                         
                         {/* Responsive Layout: Side-by-side on desktop, stacked on mobile */}
-                        <div className="flex flex-col lg:flex-row h-full max-h-[calc(85vh-80px)]">
+                        <div className="flex flex-col lg:flex-row flex-1 min-h-0 max-h-[calc(90vh-80px)]">
                           {/* Product Search Section */}
-                          <div className="flex-1 lg:w-1/2 border-b lg:border-b-0 lg:border-r border-border">
-                            <div className="p-4 border-b bg-muted/30">
+                          <div className="flex-1 lg:w-1/2 border-b lg:border-b-0 lg:border-r border-border flex flex-col min-h-0">
+                            <div className="p-3 sm:p-4 border-b bg-muted/30 flex-shrink-0">
                               <Label className="text-sm font-medium text-muted-foreground">
                                 Step 1: Select Product
                               </Label>
                             </div>
-                            <div className="h-full max-h-[400px] lg:max-h-[500px] overflow-hidden">
+                            <div className="flex-1 min-h-0 overflow-hidden">
                               <Command className="h-full">
                                 <CommandInput 
                                   placeholder="Search products by name, HSN, or rate..." 
@@ -580,8 +586,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                                     </div>
                                   </CommandEmpty>
                                   <CommandGroup className="p-0">
-                                    <div className="overflow-y-auto max-h-[320px] lg:max-h-[420px]">
-                                      {products.map((product) => (
+                                    <div className="overflow-y-auto h-full max-h-[300px] sm:max-h-[350px] lg:max-h-none">
+                                       {products.map((product) => (
                                         <CommandItem
                                           key={product.id}
                                           value={`${product.name} ${product.hsn_sac} ${product.rate}`}
@@ -622,7 +628,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                                           )}
                                         </CommandItem>
                                       ))}
-                                    </div>
+                                     </div>
                                   </CommandGroup>
                                 </CommandList>
                               </Command>
@@ -630,8 +636,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                           </div>
                           
                           {/* Quantity & Details Form Section */}
-                          <div className="flex-1 lg:w-1/2 flex flex-col">
-                            <div className="p-4 border-b bg-muted/30">
+                          <div className="flex-1 lg:w-1/2 flex flex-col min-h-0">
+                            <div className="p-3 sm:p-4 border-b bg-muted/30 flex-shrink-0">
                               <Label className="text-sm font-medium text-muted-foreground">
                                 Step 2: Enter Quantity & Pricing
                               </Label>
@@ -652,7 +658,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 min-h-0">
                                 {/* Selected Product Info */}
                                 {(() => {
                                   const selectedProduct = products.find(p => p.id === productFormData.productId);
@@ -762,7 +768,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                             
                             {/* Action Buttons */}
                             {productFormData.productId && (
-                              <div className="border-t p-4 bg-muted/20">
+                              <div className="border-t p-3 sm:p-4 bg-muted/20 flex-shrink-0">
                                 <div className="flex flex-col sm:flex-row gap-3">
                                   {editingProduct && (
                                     <Button 
@@ -881,6 +887,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
             </Button>
           </div>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
