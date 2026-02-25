@@ -112,6 +112,7 @@ export type Database = {
           created_at: string
           hsn_sac: string | null
           id: string
+          max_discount: number | null
           name: string
           rate: number
           tax_rate: number | null
@@ -123,6 +124,7 @@ export type Database = {
           created_at?: string
           hsn_sac?: string | null
           id?: string
+          max_discount?: number | null
           name: string
           rate: number
           tax_rate?: number | null
@@ -134,6 +136,7 @@ export type Database = {
           created_at?: string
           hsn_sac?: string | null
           id?: string
+          max_discount?: number | null
           name?: string
           rate?: number
           tax_rate?: number | null

@@ -19,6 +19,7 @@ export interface ProductFormData {
   hsn_sac: string;
   unit: string;
   tax_rate: number;
+  max_discount: number;
 }
 
 const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
@@ -29,6 +30,7 @@ const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
     hsn_sac: "",
     unit: "",
     tax_rate: 0,
+    max_discount: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,6 +44,7 @@ const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
         hsn_sac: "",
         unit: "",
         tax_rate: 0,
+        max_discount: 0,
       });
     }
   }, [product, open]);
@@ -139,18 +142,34 @@ const ProductForm = ({ open, onClose, onSave, product }: ProductFormProps) => {
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="tax_rate">Tax Rate (%)</Label>
-            <Input
-              id="tax_rate"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={formData.tax_rate}
-              onChange={(e) => handleInputChange('tax_rate', parseFloat(e.target.value) || 0)}
-              placeholder="Enter tax rate (e.g., 12, 18)"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="tax_rate">Tax Rate (%)</Label>
+              <Input
+                id="tax_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={formData.tax_rate}
+                onChange={(e) => handleInputChange('tax_rate', parseFloat(e.target.value) || 0)}
+                placeholder="e.g., 12, 18"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="max_discount">Max Discount (%)</Label>
+              <Input
+                id="max_discount"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={formData.max_discount}
+                onChange={(e) => handleInputChange('max_discount', parseFloat(e.target.value) || 0)}
+                placeholder="e.g., 5, 10"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-4 border-t">
