@@ -171,7 +171,7 @@ const Index = () => {
             </Card>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
               <Card className="hover:shadow-lg transition-all duration-200 border-border">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg text-black">
@@ -244,6 +244,28 @@ const Index = () => {
                     variant="outline"
                   >
                     Manage Shortcuts
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg text-black">
+                    <Users className="w-5 h-5 text-primary" />
+                    Team Management
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Add admins and employees to your team
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => navigate("/team-management")} 
+                    className="w-full h-11" 
+                    variant="outline"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Manage Team
                   </Button>
                 </CardContent>
               </Card>
