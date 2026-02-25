@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN max_discount numeric DEFAULT 0;

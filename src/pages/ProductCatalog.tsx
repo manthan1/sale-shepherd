@@ -181,6 +181,7 @@ const ProductCatalog = () => {
             hsn_sac: productData.hsn_sac || null,
             unit: productData.unit || null,
             tax_rate: productData.tax_rate,
+            max_discount: productData.max_discount,
           })
           .eq('id', editingProduct.id);
 
@@ -201,6 +202,7 @@ const ProductCatalog = () => {
             hsn_sac: productData.hsn_sac || null,
             unit: productData.unit || null,
             tax_rate: productData.tax_rate,
+            max_discount: productData.max_discount,
           }]);
 
         if (error) throw error;
@@ -231,6 +233,7 @@ const ProductCatalog = () => {
       hsn_sac: product.hsn_sac || "",
       unit: product.unit || "",
       tax_rate: product.tax_rate || 0,
+      max_discount: (product as any).max_discount || 0,
     });
     setShowProductForm(true);
   };
