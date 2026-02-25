@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, FileText, Package, Zap, LogOut, AlertCircle, Eye, Users, Plus } from "lucide-react";
+import { Settings, FileText, Package, Zap, LogOut, AlertCircle, Eye, Users, Plus, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SalesOrderForm from "@/components/SalesOrderForm";
 import HeroSection from "@/components/HeroSection";
@@ -171,7 +171,7 @@ const Index = () => {
             </Card>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
               <Card className="hover:shadow-lg transition-all duration-200 border-border">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg text-black">
@@ -266,6 +266,28 @@ const Index = () => {
                   >
                     <Users className="w-4 h-4 mr-2" />
                     Manage Team
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg text-black">
+                    <Clock className="w-5 h-5 text-primary" />
+                    Pending Approvals
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Review orders with excess discounts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => navigate("/pending-approvals")} 
+                    className="w-full h-11" 
+                    variant="outline"
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    Review Orders
                   </Button>
                 </CardContent>
               </Card>
