@@ -206,8 +206,10 @@ export type Database = {
           is_trial: boolean | null
           order_details: string
           pdf_url: string | null
+          pending_approval_reason: string | null
           shipping_address: string | null
           state: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -221,8 +223,10 @@ export type Database = {
           is_trial?: boolean | null
           order_details: string
           pdf_url?: string | null
+          pending_approval_reason?: string | null
           shipping_address?: string | null
           state?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -236,8 +240,10 @@ export type Database = {
           is_trial?: boolean | null
           order_details?: string
           pdf_url?: string | null
+          pending_approval_reason?: string | null
           shipping_address?: string | null
           state?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [

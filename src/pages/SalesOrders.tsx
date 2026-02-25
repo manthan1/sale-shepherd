@@ -19,6 +19,7 @@ interface SalesOrder {
   order_details: string;
   pdf_url: string | null;
   is_trial: boolean;
+  status: string;
   created_at: string;
 }
 
@@ -131,6 +132,7 @@ const SalesOrders = () => {
                       <TableHead className="min-w-[120px]">Contact</TableHead>
                       <TableHead className="min-w-[200px]">Order Details</TableHead>
                       <TableHead className="min-w-[80px]">Type</TableHead>
+                      <TableHead className="min-w-[100px]">Status</TableHead>
                       <TableHead className="min-w-[120px]">Date</TableHead>
                       <TableHead className="min-w-[120px]">PDF</TableHead>
                     </TableRow>
@@ -158,6 +160,14 @@ const SalesOrders = () => {
                         <TableCell>
                           <Badge variant={order.is_trial ? "secondary" : "default"}>
                             {order.is_trial ? "Trial" : "Live"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            order.status === 'approved' ? 'default' : 
+                            order.status === 'pending_approval' ? 'secondary' : 'destructive'
+                          }>
+                            {order.status === 'pending_approval' ? 'Pending' : order.status === 'approved' ? 'Approved' : 'Rejected'}
                           </Badge>
                         </TableCell>
                         <TableCell>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -10,7 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { X, FileText, Info, Plus, Edit2, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { X, FileText, Info, Plus, Edit2, Trash2, Check, ChevronsUpDown, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SalesOrderFormProps {
@@ -41,6 +43,8 @@ interface SelectedProduct {
   discount: number;
   discountedPrice: number;
   totalAmount: number;
+  max_discount: number;
+  exceedsMaxDiscount: boolean;
 }
 
 interface ProductFormData {
@@ -201,6 +205,16 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     const discount = parseFloat(productFormData.discount) || 0;
     const discountedPrice = parseFloat(productFormData.discountedPrice) || (product.rate * quantity);
     const totalAmount = product.rate * quantity;
+    const maxDiscount = product.max_discount || 0;
+    const exceedsMax = maxDiscount > 0 && discount > maxDiscount;
+
+    if (exceedsMax) {
+      toast({
+        title: "⚠️ Discount Exceeds Maximum",
+        description: `Discount ${discount}% exceeds the max allowed ${maxDiscount}% for "${product.name}". This order will require admin approval.`,
+        variant: "destructive",
+      });
+    }
 
     const newProduct: SelectedProduct = {
       id: Date.now().toString(),
@@ -214,6 +228,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
       discount,
       discountedPrice,
       totalAmount,
+      max_discount: maxDiscount,
+      exceedsMaxDiscount: exceedsMax,
     };
 
     setSelectedProducts(prev => [...prev, newProduct]);
@@ -245,6 +261,16 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     const discount = parseFloat(productFormData.discount) || 0;
     const discountedPrice = parseFloat(productFormData.discountedPrice) || (product.rate * quantity);
     const totalAmount = product.rate * quantity;
+    const maxDiscount = product.max_discount || 0;
+    const exceedsMax = maxDiscount > 0 && discount > maxDiscount;
+
+    if (exceedsMax) {
+      toast({
+        title: "⚠️ Discount Exceeds Maximum",
+        description: `Discount ${discount}% exceeds the max allowed ${maxDiscount}% for "${product.name}". This order will require admin approval.`,
+        variant: "destructive",
+      });
+    }
 
     setSelectedProducts(prev => prev.map(p => 
       p.id === editingProduct 
@@ -260,6 +286,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
             discount,
             discountedPrice,
             totalAmount,
+            max_discount: maxDiscount,
+            exceedsMaxDiscount: exceedsMax,
           }
         : p
     ));
@@ -313,6 +341,59 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
 
     setIsSubmitting(true);
     try {
+      // Check if any product exceeds max discount
+      const hasExcessDiscount = selectedProducts.some(p => p.exceedsMaxDiscount);
+      const isAdmin = !isTrialMode && companyProfile?.role === 'admin';
+      const needsApproval = hasExcessDiscount && !isAdmin && !isTrialMode;
+
+      if (needsApproval) {
+        // Save as pending approval instead of sending to webhook
+        const formattedProductsText = selectedProducts.length > 0 ? formatSelectedProductsText(selectedProducts) : '';
+        const combinedOrderDetails = [formData.orderDetails.trim(), formattedProductsText].filter(Boolean).join('\n\n');
+        
+        const exceedingProducts = selectedProducts
+          .filter(p => p.exceedsMaxDiscount)
+          .map(p => `${p.name}: ${p.discount}% (max: ${p.max_discount}%)`)
+          .join(', ');
+
+        const { error: dbError } = await supabase
+          .from('sales_orders')
+          .insert([{
+            company_id: companyProfile?.company_id,
+            customer_name: formData.customerName.trim(),
+            shipping_address: formData.shippingAddress.trim(),
+            state: formData.state.trim(),
+            contact_number: formData.contactNumber.trim(),
+            order_details: combinedOrderDetails,
+            freight_expense: parseInt(formData.freight_expense) || 0,
+            cust_gst_number: formData.cust_gst_number.trim() || null,
+            pdf_url: null,
+            is_trial: false,
+            status: 'pending_approval',
+            pending_approval_reason: `Discount exceeds maximum: ${exceedingProducts}`,
+          }]);
+
+        if (dbError) {
+          console.error('Database error:', dbError);
+          throw new Error("Failed to save order for approval");
+        }
+
+        toast({
+          title: "Order Sent for Approval",
+          description: "This order has discounts exceeding the maximum limit. It has been sent to admin for approval.",
+        });
+
+        // Reset form
+        setFormData({
+          customerName: "", shippingAddress: "", state: "", contactNumber: "",
+          orderDetails: "", freight_expense: "", cust_gst_number: "",
+        });
+        setSelectedProducts([]);
+        setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
+        onClose();
+        return;
+      }
+
       const webhookUrl = isTrialMode
         ? "https://n8n.srv898271.hstgr.cloud/webhook/7ed8b450-cdfd-4767-8ed3-3a5f1d225fc3"
         : "https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97";
@@ -333,7 +414,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         company_id: isTrialMode ? null : companyProfile?.company_id || null,
         isCompanyIdpresent: !isTrialMode && !!companyProfile?.company_id,
         user: user ? user.email : "anonymous",
-        isAdmin: isTrialMode ? false : (companyProfile?.role === 'admin'),
+        isAdmin: isTrialMode ? false : isAdmin,
       };
 
       // Send to webhook
@@ -372,6 +453,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
               cust_gst_number: formData.cust_gst_number.trim() || null,
               pdf_url: pdfUrl,
               is_trial: false,
+              status: 'approved',
             }]);
 
           if (dbError) {
@@ -707,6 +789,25 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                                         step="0.01"
                                         className="h-11"
                                       />
+                                      {(() => {
+                                        const selectedProduct = products.find(p => p.id === productFormData.productId);
+                                        const currentDiscount = parseFloat(productFormData.discount) || 0;
+                                        const maxDiscount = selectedProduct?.max_discount || 0;
+                                        if (maxDiscount > 0 && currentDiscount > maxDiscount) {
+                                          return (
+                                            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                              <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                                              <span>Exceeds max discount ({maxDiscount}%). Requires admin approval.</span>
+                                            </div>
+                                          );
+                                        }
+                                        if (maxDiscount > 0) {
+                                          return (
+                                            <p className="text-xs text-muted-foreground">Max allowed: {maxDiscount}%</p>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
                                     </div>
                                   </div>
                                   
@@ -815,6 +916,14 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                 {selectedProducts.length > 0 && (
                   <div className="space-y-3">
                     <Label className="text-sm font-medium">Selected Products</Label>
+                    {selectedProducts.some(p => p.exceedsMaxDiscount) && (
+                      <Alert variant="destructive" className="border-destructive/50">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Some products have discounts exceeding the maximum limit. This order will be sent for admin approval instead of being generated immediately.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     {selectedProducts.map((product) => (
                       <Card key={product.id} className="p-4">
                         <div className="flex items-start justify-between gap-4">
@@ -827,7 +936,10 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
                             </div>
                             <div className="text-sm">
                               <div>Qty: {product.quantity}</div>
-                              <div className="text-muted-foreground">Discount: {product.discount}%</div>
+                            {product.exceedsMaxDiscount && (
+                              <Badge variant="destructive" className="text-xs mt-1">⚠️ Exceeds max discount</Badge>
+                            )}
+                            <div className="text-muted-foreground">Discount: {product.discount}%</div>
                             </div>
                             <div className="text-sm font-medium">
                               Total: ₹{product.discountedPrice.toLocaleString()}

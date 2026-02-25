@@ -13,6 +13,7 @@ import ProductShortcuts from "./pages/ProductShortcuts";
 import SalesOrders from "./pages/SalesOrders";
 import TrialDashboard from "./pages/TrialDashboard";
 import TeamManagement from "./pages/TeamManagement";
+import PendingApprovals from "./pages/PendingApprovals";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/sales-orders" element={<SalesOrders />} />
             <Route path="/trial-dashboard" element={<TrialDashboard />} />
             <Route path="/team-management" element={<TeamManagement />} />
+            <Route path="/pending-approvals" element={<PendingApprovals />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
