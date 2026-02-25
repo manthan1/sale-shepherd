@@ -159,6 +159,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          is_active: boolean
           role: string
           updated_at: string
           user_id: string
@@ -168,6 +169,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          is_active?: boolean
           role?: string
           updated_at?: string
           user_id: string
@@ -177,6 +179,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          is_active?: boolean
           role?: string
           updated_at?: string
           user_id?: string
@@ -252,6 +255,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_company_id: { Args: { user_uuid: string }; Returns: string }
+      get_user_role: { Args: { user_uuid: string }; Returns: string }
       user_has_company: { Args: { user_uuid: string }; Returns: boolean }
     }
     Enums: {

@@ -12,6 +12,7 @@ import ProductCatalog from "./pages/ProductCatalog";
 import ProductShortcuts from "./pages/ProductShortcuts";
 import SalesOrders from "./pages/SalesOrders";
 import TrialDashboard from "./pages/TrialDashboard";
+import TeamManagement from "./pages/TeamManagement";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/product-shortcuts" element={<ProductShortcuts />} />
             <Route path="/sales-orders" element={<SalesOrders />} />
             <Route path="/trial-dashboard" element={<TrialDashboard />} />
+            <Route path="/team-management" element={<TeamManagement />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
