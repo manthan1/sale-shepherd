@@ -17,6 +17,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { generateSalesOrderPdf, PdfProduct, PdfCompanyData } from "@/utils/generateSalesOrderPdf";
 
 interface PendingOrder {
   id: string;
@@ -86,47 +87,90 @@ const PendingApprovals = () => {
   const handleApprove = async (order: PendingOrder) => {
     setProcessing(true);
     try {
-      // Send to webhook for PDF generation
-      const webhookUrl = "https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97";
-      
-      const orderData = {
-        customerName: order.customer_name,
-        shippingAddress: order.shipping_address || "",
-        state: order.state || "",
-        contactNumber: order.contact_number || "",
-        orderDetails: order.order_details,
-        freight_expense: order.freight_expense?.toString() || "0",
-        cust_gst_number: order.cust_gst_number || null,
-        selected_products: [],
-        products_count: 0,
-        total_order_value: 0,
-        timestamp: new Date().toISOString(),
-        isTrialMode: false,
-        company_id: order.company_id,
-        isCompanyIdpresent: !!order.company_id,
-        user: user?.email || "admin",
-        isAdmin: true,
-      };
+      // Fetch company data for PDF generation
+      let companyData: PdfCompanyData | null = null;
+      if (order.company_id) {
+        const { data: company } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', order.company_id)
+          .single();
+        if (company) {
+          companyData = {
+            name: company.name,
+            address: company.address || "",
+            gstin: company.gstin || "",
+            state: company.state || "",
+            bank_account_holder: company.bank_account_holder || "",
+            bank_name: company.bank_name || "",
+            bank_account_no: company.bank_account_no || "",
+            bank_ifsc: company.bank_ifsc || "",
+            logo_url: company.logo_url,
+            authorized_signature_url: company.authorized_signature_url,
+            payment_qr_url: company.payment_qr_url,
+          };
+        }
+      }
 
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
-      });
+      if (!companyData) throw new Error("Company data not found");
 
-      const result = await response.json();
-      const pdfUrl = result.pdfUrl || null;
+      // Parse order_details back into products (best effort)
+      // Order details format: "qty name - discount% discount" per line
+      const pdfProducts: PdfProduct[] = [];
+      const lines = order.order_details.split('\n').filter(Boolean);
+      for (const line of lines) {
+        const match = line.match(/^([\d.]+)\s+(.+?)(?:\s*-\s*([\d.]+)%\s*discount)?$/i);
+        if (match) {
+          const qty = parseFloat(match[1]) || 1;
+          const productName = match[2].trim();
+          const discount = parseFloat(match[3]) || 0;
+
+          // Try to find actual product in DB
+          const { data: productData } = await supabase
+            .from('products')
+            .select('*')
+            .eq('company_id', order.company_id!)
+            .ilike('name', productName)
+            .limit(1)
+            .single();
+
+          if (productData) {
+            pdfProducts.push({
+              name: productData.name,
+              hsn_sac: productData.hsn_sac || "",
+              quantity: qty,
+              rate: productData.rate,
+              unit: productData.unit || "PCS",
+              discount,
+              tax_rate: productData.tax_rate || 0,
+            });
+          }
+        }
+      }
+
+      let pdfUrl: string | null = null;
+      if (pdfProducts.length > 0) {
+        pdfUrl = await generateSalesOrderPdf(companyData, {
+          customerName: order.customer_name,
+          shippingAddress: order.shipping_address || "",
+          customerState: order.state || "",
+          contactNumber: order.contact_number || "",
+          custGstNumber: order.cust_gst_number,
+          freightExpense: order.freight_expense || 0,
+          products: pdfProducts,
+        });
+      }
 
       // Update order status to approved
       const { error } = await supabase
         .from('sales_orders')
-        .update({ status: 'approved', pdf_url: pdfUrl })
+        .update({ status: 'approved' })
         .eq('id', order.id);
 
       if (error) throw error;
 
       toast({ title: "Order Approved", description: `Order for ${order.customer_name} has been approved and generated.` });
-      
+
       if (pdfUrl) {
         window.open(pdfUrl, '_blank');
       }

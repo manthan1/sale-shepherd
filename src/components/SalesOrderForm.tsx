@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { X, FileText, Info, Plus, Edit2, Trash2, Check, ChevronsUpDown, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { generateSalesOrderPdf, PdfProduct, PdfCompanyData } from "@/utils/generateSalesOrderPdf";
 
 interface SalesOrderFormProps {
   open: boolean;
@@ -394,108 +395,100 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         return;
       }
 
-      const webhookUrl = isTrialMode
-        ? "https://n8n.srv898271.hstgr.cloud/webhook/7ed8b450-cdfd-4767-8ed3-3a5f1d225fc3"
-        : "https://n8n.srv898271.hstgr.cloud/webhook/bbd7cf14-90df-4946-8d2d-2de208c58b97";
-      
-      // Prepare order data
-      const formattedProductsText = selectedProducts.length > 0 ? formatSelectedProductsText(selectedProducts) : '';
-      const combinedOrderDetails = [formData.orderDetails.trim(), formattedProductsText].filter(Boolean).join('\n\n');
-      
-      const orderData = {
-        ...formData,
-        orderDetails: combinedOrderDetails,
-        cust_gst_number: formData.cust_gst_number.trim() || null,
-        selected_products: selectedProducts,
-        products_count: selectedProducts.length,
-        total_order_value: selectedProducts.reduce((sum, p) => sum + p.discountedPrice, 0),
-        timestamp: new Date().toISOString(),
-        isTrialMode,
-        company_id: isTrialMode ? null : companyProfile?.company_id || null,
-        isCompanyIdpresent: !isTrialMode && !!companyProfile?.company_id,
-        user: user ? user.email : "anonymous",
-        isAdmin: isTrialMode ? false : isAdmin,
-      };
+      // Build company data for PDF
+      const companyData: PdfCompanyData = isTrialMode
+        ? {
+            name: "Demo Company Pvt Ltd",
+            address: "123 Demo Street, Demo City",
+            gstin: "00DEMO0000D1Z0",
+            state: "Gujarat",
+            bank_account_holder: "Demo Company Pvt Ltd",
+            bank_name: "Demo Bank",
+            bank_account_no: "0000000000",
+            bank_ifsc: "DEMO0000000",
+          }
+        : {
+            name: companyProfile?.companies?.name || "",
+            address: companyProfile?.companies?.address || "",
+            gstin: companyProfile?.companies?.gstin || "",
+            state: companyProfile?.companies?.state || "",
+            bank_account_holder: companyProfile?.companies?.bank_account_holder || "",
+            bank_name: companyProfile?.companies?.bank_name || "",
+            bank_account_no: companyProfile?.companies?.bank_account_no || "",
+            bank_ifsc: companyProfile?.companies?.bank_ifsc || "",
+            logo_url: companyProfile?.companies?.logo_url,
+            authorized_signature_url: companyProfile?.companies?.authorized_signature_url,
+            payment_qr_url: companyProfile?.companies?.payment_qr_url,
+          };
 
-      // Send to webhook
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(orderData),
+      // Build products for PDF
+      const pdfProducts: PdfProduct[] = selectedProducts.map((p) => ({
+        name: p.name,
+        hsn_sac: p.hsn_sac,
+        quantity: p.quantity,
+        rate: p.rate,
+        unit: p.unit,
+        discount: p.discount,
+        tax_rate: p.tax_rate,
+      }));
+
+      // Generate PDF locally
+      const pdfUrl = await generateSalesOrderPdf(companyData, {
+        customerName: formData.customerName.trim(),
+        shippingAddress: formData.shippingAddress.trim(),
+        customerState: formData.state.trim(),
+        contactNumber: formData.contactNumber.trim(),
+        custGstNumber: formData.cust_gst_number.trim() || null,
+        freightExpense: parseInt(formData.freight_expense) || 0,
+        products: pdfProducts,
       });
 
-      // Get response data (if available)
-      const result = await response.json();
-      
-      // Check if there's an error in the response
-      if (result.error) {
-        console.log("Error Message : ", result.error);
-        throw new Error(result.error);
+      // Save to database for non-trial users
+      if (!isTrialMode) {
+        const formattedProductsText = selectedProducts.length > 0 ? formatSelectedProductsText(selectedProducts) : '';
+        const combinedOrderDetails = [formData.orderDetails.trim(), formattedProductsText].filter(Boolean).join('\n\n');
+
+        const { error: dbError } = await supabase
+          .from('sales_orders')
+          .insert([{
+            company_id: companyProfile?.company_id,
+            customer_name: formData.customerName.trim(),
+            shipping_address: formData.shippingAddress.trim(),
+            state: formData.state.trim(),
+            contact_number: formData.contactNumber.trim(),
+            order_details: combinedOrderDetails,
+            freight_expense: parseInt(formData.freight_expense) || 0,
+            cust_gst_number: formData.cust_gst_number.trim() || null,
+            pdf_url: null,
+            is_trial: false,
+            status: 'approved',
+          }]);
+
+        if (dbError) {
+          console.error('Database error:', dbError);
+        }
       }
 
-      if (response.ok) {
-        const pdfUrl = result.pdfUrl || null;
+      toast({
+        title: "Success",
+        description: isTrialMode
+          ? "Sales order generated successfully!"
+          : "Sales order submitted successfully!",
+      });
 
-        // Only save to database for non-trial users
-        if (!isTrialMode) {
-          const { error: dbError } = await supabase
-            .from('sales_orders')
-            .insert([{
-              company_id: companyProfile?.company_id,
-              customer_name: formData.customerName.trim(),
-              shipping_address: formData.shippingAddress.trim(),
-              state: formData.state.trim(),
-              contact_number: formData.contactNumber.trim(),
-              order_details: formData.orderDetails.trim(),
-              freight_expense: parseInt(formData.freight_expense) || 0,
-              cust_gst_number: formData.cust_gst_number.trim() || null,
-              pdf_url: pdfUrl,
-              is_trial: false,
-              status: 'approved',
-            }]);
-
-          if (dbError) {
-            console.error('Database error:', dbError);
-          }
-        }
-
-        toast({
-          title: "Success",
-          description: isTrialMode 
-            ? "Sales order generated successfully!" 
-            : "Sales order submitted successfully!",
-        });
-
-        // Open PDF in a new tab for both trial and logged-in users
-        if (pdfUrl) {
-          setTimeout(() => {
-            window.open(pdfUrl, '_blank');
-            
-            toast({
-              title: "PDF Opened",
-              description: "The sales order PDF has been opened in a new tab.",
-            });
-          }, 1000);
-        }
-        
-        // Reset form
-        setFormData({
-          customerName: "",
-          shippingAddress: "",
-          state: "",
-          contactNumber: "",
-          orderDetails: "",
-          freight_expense: "",
-          cust_gst_number: "",
-        });
-        setSelectedProducts([]);
-        setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
-        onClose();
-      } else {
-        throw new Error("Failed to submit order");
+      // Open PDF
+      if (pdfUrl) {
+        window.open(pdfUrl, '_blank');
       }
+
+      // Reset form
+      setFormData({
+        customerName: "", shippingAddress: "", state: "", contactNumber: "",
+        orderDetails: "", freight_expense: "", cust_gst_number: "",
+      });
+      setSelectedProducts([]);
+      setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
+      onClose();
     } catch (error: any) {
       console.log(error.message);
       toast({
