@@ -1,5 +1,4 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import html2pdf from "html2pdf.js";
 
 const INDIAN_STATE_CODES: Record<string, string> = {
   "Andhra Pradesh": "37", "Arunachal Pradesh": "12", "Assam": "18", "Bihar": "10",
@@ -39,8 +38,7 @@ function numberToWords(num: number): string {
     return convert(Math.floor(n / 10000000)) + " Crore" + (n % 10000000 ? " " + convert(n % 10000000) : "");
   }
 
-  const rounded = Math.round(num);
-  return convert(rounded);
+  return convert(Math.round(num));
 }
 
 export interface PdfProduct {
@@ -79,200 +77,47 @@ export interface PdfOrderData {
   orderDate?: string;
 }
 
-function loadImageAsBase64(url: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    if (!url) { resolve(null); return; }
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      ctx?.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => resolve(null);
-    img.src = url;
-  });
-}
-
-export async function generateSalesOrderPdf(
-  company: PdfCompanyData,
-  order: PdfOrderData
-): Promise<string> {
-  const doc = new jsPDF("p", "mm", "a4");
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 14;
-  const contentWidth = pageWidth - margin * 2;
-  let y = margin;
-
-  // Load images
-  const [logoBase64, signatureBase64] = await Promise.all([
-    company.logo_url ? loadImageAsBase64(company.logo_url) : Promise.resolve(null),
-    company.authorized_signature_url ? loadImageAsBase64(company.authorized_signature_url) : Promise.resolve(null),
-  ]);
-
-  // === HEADER ===
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.text("SALES ORDER", pageWidth / 2, y + 6, { align: "center" });
-  y += 12;
-
-  // Company name
-  doc.setFontSize(12);
-  doc.text(company.name, pageWidth / 2, y + 5, { align: "center" });
-  y += 10;
-
-  // Logo (top-left if available)
-  if (logoBase64) {
-    try { doc.addImage(logoBase64, "PNG", margin, margin, 25, 25); } catch { /* ignore */ }
-  }
-
-  // Divider
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.5);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 4;
-
-  // === VOUCHER INFO ===
+function buildHtml(company: PdfCompanyData, order: PdfOrderData): string {
   const companyStateCode = getStateCode(company.state);
+  const custStateCode = getStateCode(order.customerState);
   const voucherNo = order.voucherNumber || `SO/${Date.now().toString().slice(-6)}`;
   const orderDate = order.orderDate || new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" });
-
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-
-  const leftCol = margin;
-  const rightCol = pageWidth / 2 + 5;
-
-  doc.text(`Voucher No.: ${voucherNo}`, leftCol, y);
-  doc.text(`Dated: ${orderDate}`, rightCol, y);
-  y += 4;
-  doc.text(`GSTIN/UIN: ${company.gstin}`, leftCol, y);
-  doc.text(`Buyer's Ref.: ${voucherNo}`, rightCol, y);
-  y += 4;
-  doc.text(`State: ${company.state}${companyStateCode ? `, Code: ${companyStateCode}` : ""}`, leftCol, y);
-  y += 6;
-
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 4;
-
-  // === CONSIGNEE & BUYER ===
-  const custStateCode = getStateCode(order.customerState);
-  const halfWidth = contentWidth / 2 - 2;
-
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.text("Consignee (Ship to)", leftCol, y);
-  doc.text("Buyer (Bill to)", rightCol, y);
-  y += 4;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-
-  // Consignee
-  const consigneeLines = [
-    order.customerName,
-    order.shippingAddress || "",
-    order.customerState ? `State: ${order.customerState}${custStateCode ? `, Code: ${custStateCode}` : ""}` : "",
-    order.contactNumber ? `Contact: ${order.contactNumber}` : "",
-    order.custGstNumber ? `GSTIN: ${order.custGstNumber}` : "",
-  ].filter(Boolean);
-
-  // Buyer (same as consignee)
-  const buyerLines = [...consigneeLines];
-
-  const maxLines = Math.max(consigneeLines.length, buyerLines.length);
-  for (let i = 0; i < maxLines; i++) {
-    if (consigneeLines[i]) doc.text(consigneeLines[i], leftCol, y);
-    if (buyerLines[i]) doc.text(buyerLines[i], rightCol, y);
-    y += 4;
-  }
-  y += 2;
-
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 2;
-
-  // === PRODUCTS TABLE ===
   const isSameState = company.state?.toLowerCase().trim() === order.customerState?.toLowerCase().trim();
-
-  const tableHead = [["Sl No.", "Description of Goods", "HSN/SAC", "Quantity", "Rate per", "Disc. %", "Amount"]];
-  const tableBody: (string | number)[][] = [];
 
   let subTotal = 0;
   let totalQuantity = 0;
-  let totalTaxableAmount = 0;
   const taxBreakdown: Record<number, number> = {};
 
-  order.products.forEach((product, index) => {
+  const itemRowsHtml = order.products.map((product, i) => {
     const baseAmount = product.rate * product.quantity;
     const discountAmount = baseAmount * (product.discount / 100);
     const lineAmount = baseAmount - discountAmount;
     subTotal += lineAmount;
     totalQuantity += product.quantity;
-    totalTaxableAmount += lineAmount;
 
     const taxRate = product.tax_rate || 0;
     if (!taxBreakdown[taxRate]) taxBreakdown[taxRate] = 0;
     taxBreakdown[taxRate] += lineAmount;
 
-    tableBody.push([
-      (index + 1).toString(),
-      product.name,
-      product.hsn_sac || "",
-      product.quantity.toFixed(2),
-      `${product.rate.toFixed(2)} ${product.unit}`,
-      product.discount > 0 ? product.discount.toFixed(2) : "0.00",
-      lineAmount.toFixed(2),
-    ]);
-  });
+    return `
+      <tr>
+        <td class="text-center">${i + 1}</td>
+        <td style="font-weight: bold;">${product.name}</td>
+        <td>${product.hsn_sac || ""}</td>
+        <td>${orderDate}</td>
+        <td class="text-right"><strong>${product.quantity.toFixed(2)}</strong> ${product.unit}</td>
+        <td class="text-right">${product.rate.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td>${product.unit}</td>
+        <td class="text-right">${product.discount > 0 ? product.discount.toFixed(2) : "0.00"}</td>
+        <td class="text-right"><strong>${lineAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
+      </tr>
+    `;
+  }).join("");
 
-  autoTable(doc, {
-    head: tableHead,
-    body: tableBody,
-    startY: y,
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: "bold" },
-    columnStyles: {
-      0: { cellWidth: 12, halign: "center" },
-      1: { cellWidth: 55 },
-      2: { cellWidth: 20, halign: "center" },
-      3: { cellWidth: 20, halign: "right" },
-      4: { cellWidth: 28, halign: "right" },
-      5: { cellWidth: 16, halign: "right" },
-      6: { cellWidth: 25, halign: "right" },
-    },
-    theme: "grid",
-  });
-
-  y = (doc as any).lastAutoTable.finalY + 2;
-
-  // === TOTALS SECTION ===
-  const freightExpense = order.freightExpense || 0;
+  // Tax rows
   let totalTax = 0;
+  let taxRowsHtml = "";
 
-  const summaryX = pageWidth - margin - 70;
-  const valueX = pageWidth - margin;
-
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-
-  // Sub Total
-  doc.text("Sub Total:", summaryX, y);
-  doc.text(subTotal.toFixed(2), valueX, y, { align: "right" });
-  y += 5;
-
-  // Freight
-  if (freightExpense > 0) {
-    doc.text("Freight Expense:", summaryX, y);
-    doc.text(freightExpense.toFixed(2), valueX, y, { align: "right" });
-    y += 5;
-  }
-
-  // Tax lines
   for (const [rateStr, taxableAmount] of Object.entries(taxBreakdown)) {
     const rate = parseFloat(rateStr);
     if (rate <= 0) continue;
@@ -281,101 +126,229 @@ export async function generateSalesOrderPdf(
       const halfRate = rate / 2;
       const halfTax = (taxableAmount * halfRate) / 100;
       totalTax += halfTax * 2;
-
-      doc.text(`OUTPUT CGST ${halfRate.toFixed(2)}%:`, summaryX, y);
-      doc.text(halfTax.toFixed(2), valueX, y, { align: "right" });
-      y += 5;
-
-      doc.text(`OUTPUT SGST ${halfRate.toFixed(2)}%:`, summaryX, y);
-      doc.text(halfTax.toFixed(2), valueX, y, { align: "right" });
-      y += 5;
+      taxRowsHtml += `
+        <tr>
+          <td colspan="8" class="text-right bold">OUTPUT CGST ${halfRate.toFixed(2)}%</td>
+          <td class="text-right bold">${halfTax.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        </tr>
+        <tr>
+          <td colspan="8" class="text-right bold">OUTPUT SGST ${halfRate.toFixed(2)}%</td>
+          <td class="text-right bold">${halfTax.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        </tr>
+      `;
     } else {
       const igst = (taxableAmount * rate) / 100;
       totalTax += igst;
-
-      doc.text(`OUTPUT IGST ${rate.toFixed(2)}%:`, summaryX, y);
-      doc.text(igst.toFixed(2), valueX, y, { align: "right" });
-      y += 5;
+      taxRowsHtml += `
+        <tr>
+          <td colspan="8" class="text-right bold">OUTPUT IGST ${rate.toFixed(0)}%</td>
+          <td class="text-right bold">${igst.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        </tr>
+      `;
     }
   }
 
-  // Grand total
+  const freightExpense = order.freightExpense || 0;
+  let freightRowHtml = "";
+  if (freightExpense > 0) {
+    freightRowHtml = `
+      <tr>
+        <td colspan="8" class="text-right bold">Freight Expense</td>
+        <td class="text-right bold">${freightExpense.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      </tr>
+    `;
+  }
+
   const grandTotalRaw = subTotal + freightExpense + totalTax;
   const grandTotal = Math.round(grandTotalRaw);
   const roundOff = grandTotal - grandTotalRaw;
+  const amountInWords = numberToWords(grandTotal);
+  const defaultUnit = order.products[0]?.unit || "Box";
 
-  doc.text("Round Off:", summaryX, y);
-  doc.text(roundOff.toFixed(2), valueX, y, { align: "right" });
-  y += 5;
+  const logoHtml = company.logo_url
+    ? `<div style="padding-right: 15px;"><img src="${company.logo_url}" alt="Company Logo" style="width: 70px; height: auto;" crossorigin="anonymous"></div>`
+    : "";
 
-  doc.setLineWidth(0.5);
-  doc.line(summaryX, y, valueX, y);
-  y += 4;
+  const signatureHtml = company.authorized_signature_url
+    ? `<img src="${company.authorized_signature_url}" alt="Signature" style="width: 120px; height: auto; margin: 8px 0;" crossorigin="anonymous">`
+    : `<br><br><br>`;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text(`Total: ${totalQuantity.toFixed(2)} ${order.products[0]?.unit || ""}`, summaryX, y);
-  doc.text(`₹ ${grandTotal.toLocaleString("en-IN")}.00`, valueX, y, { align: "right" });
-  y += 6;
+  const customerGstHtml = order.custGstNumber
+    ? `<br><span class="bold">GSTIN:</span> ${order.custGstNumber}`
+    : "";
 
-  // Amount in words
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(8);
-  doc.text(`Amount Chargeable (in words): INR ${numberToWords(grandTotal)} Only`, margin, y);
-  y += 4;
-  doc.setFont("helvetica", "normal");
-  doc.text("E. & O.E", margin, y);
-  y += 8;
+  return `
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 10.5px; color: #000; margin: 0; padding: 0; }
+    .container { width: 800px; margin: auto; border: 1px solid #000; padding: 5px; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 4px; vertical-align: top; }
+    .bordered, .bordered td, .bordered th { border: 1px solid #000; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .bold { font-weight: bold; }
+    .items-table td { padding-top: 6px; padding-bottom: 6px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h3 class="text-center" style="font-size: 16px; margin: 5px 0;">SALES ORDER</h3>
 
-  // === BANK DETAILS ===
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 4;
+  <table class="bordered">
+    <tr>
+      <td style="width: 55%;" rowspan="2">
+        <div style="display: flex; align-items: center;">
+          ${logoHtml}
+          <div>
+            <span class="bold" style="font-size: 14px;">${company.name}</span><br>
+            ${company.address}<br>
+            <span class="bold">GSTIN/UIN:</span> ${company.gstin}<br>
+            <span class="bold">State Name:</span> ${company.state}${companyStateCode ? `, Code : ${companyStateCode}` : ""}
+          </div>
+        </div>
+      </td>
+      <td style="width: 45%;">
+        <table class="bordered">
+          <tr><td>Voucher No.</td><td class="bold">${voucherNo}</td></tr>
+          <tr><td>Dated</td><td class="bold">${orderDate}</td></tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <table class="bordered">
+          <tr><td>Buyer's Ref./Order No.</td><td class="bold">${voucherNo}</td></tr>
+          <tr><td>Mode/Terms of Payment</td><td></td></tr>
+          <tr><td>Other References</td><td></td></tr>
+          <tr><td>Dispatched through</td><td></td></tr>
+          <tr><td>Destination</td><td></td></tr>
+          <tr><td style="height: 40px;">Terms of Delivery</td><td></td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("Company's Bank Details", margin, y);
-  y += 5;
+  <!-- Address Section -->
+  <table class="bordered" style="margin-top: 5px;">
+    <tr>
+      <td style="width: 50%;">
+        <span class="bold">Consignee (Ship to)</span><br>
+        <span class="bold" style="font-size: 13px;">${order.customerName}</span><br>
+        ${order.shippingAddress}<br>
+        <span class="bold">State Name:</span> ${order.customerState}${custStateCode ? `, Code : ${custStateCode}` : ""}<br>
+        <span class="bold">Contact:</span> ${order.contactNumber}${customerGstHtml}
+      </td>
+      <td style="width: 50%;">
+        <span class="bold">Buyer (Bill to)</span><br>
+        <span class="bold" style="font-size: 13px;">${order.customerName}</span><br>
+        ${order.shippingAddress}<br>
+        <span class="bold">State Name:</span> ${order.customerState}${custStateCode ? `, Code : ${custStateCode}` : ""}<br>
+        <span class="bold">Contact:</span> ${order.contactNumber}${customerGstHtml}
+      </td>
+    </tr>
+  </table>
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  const bankDetails = [
-    `A/c Holder's Name: ${company.bank_account_holder}`,
-    `Bank Name: ${company.bank_name}`,
-    `A/c No.: ${company.bank_account_no}`,
-    `Branch & IFS Code: ${company.bank_ifsc}`,
-  ];
-  bankDetails.forEach((line) => {
-    doc.text(line, margin, y);
-    y += 4;
-  });
-  y += 4;
+  <!-- Items Table -->
+  <table class="bordered items-table" style="margin-top: 5px;">
+    <thead>
+      <tr>
+        <th class="text-center">Sl No.</th>
+        <th>Description of Goods</th>
+        <th>HSN/SAC</th>
+        <th style="width: 70px;">Due on</th>
+        <th class="text-right">Quantity</th>
+        <th class="text-right">Rate</th>
+        <th>per</th>
+        <th class="text-right">Disc. %</th>
+        <th class="text-right">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${itemRowsHtml}
+      <tr>
+        <td colspan="8" class="text-right bold">Sub Total</td>
+        <td class="text-right bold">${subTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      </tr>
+      ${freightRowHtml}
+      ${taxRowsHtml}
+      <tr>
+        <td colspan="8" class="text-right bold">Round Off</td>
+        <td class="text-right bold">${roundOff.toFixed(2)}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="bold">
+        <td colspan="4" class="text-center">Total</td>
+        <td class="text-right">${totalQuantity.toFixed(2)} ${defaultUnit}</td>
+        <td colspan="3"></td>
+        <td class="text-right" style="font-size: 14px;">₹ ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      </tr>
+    </tfoot>
+  </table>
 
-  // === SIGNATURE ===
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.text(`for ${company.name}`, pageWidth - margin, y, { align: "right" });
-  y += 2;
+  <!-- Amount in Words -->
+  <table class="bordered" style="margin-top: 5px;">
+    <tr>
+      <td>Amount Chargeable (in words)<br><span class="bold text-center" style="display: block; margin-top: 5px;">INR ${amountInWords} Only</span></td>
+      <td class="text-right" style="width: 20%;">E. & O.E</td>
+    </tr>
+  </table>
 
-  if (signatureBase64) {
-    try {
-      doc.addImage(signatureBase64, "PNG", pageWidth - margin - 35, y, 35, 15);
-      y += 17;
-    } catch { y += 2; }
-  } else {
-    y += 15;
-  }
+  <!-- Bank Details & Signature -->
+  <table style="margin-top: 5px;">
+    <tr>
+      <td style="width: 50%;">
+        <span class="bold">Company's Bank Details</span><br>
+        A/c Holder's Name: <span class="bold">${company.bank_account_holder}</span><br>
+        Bank Name: <span class="bold">${company.bank_name}</span><br>
+        A/c No.: <span class="bold">${company.bank_account_no}</span><br>
+        Branch & IFS Code: <span class="bold">${company.bank_ifsc}</span>
+      </td>
+      <td style="width: 50%; vertical-align: bottom; text-align: right;">
+        <span class="bold">for ${company.name}</span><br>
+        ${signatureHtml}
+        Authorised Signatory
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2" class="text-center" style="font-size: 9px; padding-top: 15px;">This is a Computer Generated Document</td>
+    </tr>
+  </table>
+</div>
+</body>
+</html>
+  `;
+}
 
-  doc.text("Authorised Signatory", pageWidth - margin, y, { align: "right" });
-  y += 8;
+export async function generateSalesOrderPdf(
+  company: PdfCompanyData,
+  order: PdfOrderData
+): Promise<string> {
+  const htmlContent = buildHtml(company, order);
 
-  // Footer
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "italic");
-  doc.text("This is a Computer Generated Document", pageWidth / 2, y, { align: "center" });
+  // Create a temporary container
+  const container = document.createElement("div");
+  container.innerHTML = htmlContent;
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  document.body.appendChild(container);
 
-  // Generate blob URL
-  const blob = doc.output("blob");
-  const blobUrl = URL.createObjectURL(blob);
+  const element = container.querySelector(".container") || container;
+
+  const opt = {
+    margin: [5, 5, 5, 5],
+    filename: `SalesOrder_${order.customerName.replace(/\s+/g, "_")}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
+  };
+
+  const pdfBlob: Blob = await html2pdf().set(opt).from(element).outputPdf("blob");
+  document.body.removeChild(container);
+
+  const blobUrl = URL.createObjectURL(pdfBlob);
   return blobUrl;
 }
