@@ -419,6 +419,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
             logo_url: companyProfile?.companies?.logo_url,
             authorized_signature_url: companyProfile?.companies?.authorized_signature_url,
             payment_qr_url: companyProfile?.companies?.payment_qr_url,
+            pdf_background_url: companyProfile?.companies?.pdf_background_url,
           };
 
       // Build products for PDF

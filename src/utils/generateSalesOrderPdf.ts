@@ -63,6 +63,7 @@ export interface PdfCompanyData {
   logo_url?: string | null;
   authorized_signature_url?: string | null;
   payment_qr_url?: string | null;
+  pdf_background_url?: string | null;
 }
 
 export interface PdfOrderData {
@@ -165,6 +166,12 @@ function buildHtml(company: PdfCompanyData, order: PdfOrderData): string {
   const amountInWords = numberToWords(grandTotal);
   const defaultUnit = order.products[0]?.unit || "Box";
 
+  const watermarkHtml = company.pdf_background_url
+    ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.08; z-index: 0; pointer-events: none;">
+        <img src="${company.pdf_background_url}" alt="Watermark" style="width: 400px; height: auto;" crossorigin="anonymous">
+      </div>`
+    : "";
+
   const logoHtml = company.logo_url
     ? `<div style="padding-right: 15px;"><img src="${company.logo_url}" alt="Company Logo" style="width: 70px; height: auto;" crossorigin="anonymous"></div>`
     : "";
@@ -182,9 +189,9 @@ function buildHtml(company: PdfCompanyData, order: PdfOrderData): string {
 <head>
   <style>
     body { font-family: Arial, sans-serif; font-size: 10.5px; color: #000; margin: 0; padding: 0; }
-    .container { width: 800px; margin: auto; border: 1px solid #000; padding: 5px; }
-    table { width: 100%; border-collapse: collapse; }
-    td, th { padding: 4px; vertical-align: top; }
+    .container { width: 750px; margin: auto; border: 1px solid #000; padding: 5px; position: relative; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    td, th { padding: 4px; vertical-align: top; word-wrap: break-word; overflow: hidden; }
     .bordered, .bordered td, .bordered th { border: 1px solid #000; }
     .text-center { text-align: center; }
     .text-right { text-align: right; }
@@ -194,6 +201,7 @@ function buildHtml(company: PdfCompanyData, order: PdfOrderData): string {
 </head>
 <body>
 <div class="container">
+  ${watermarkHtml}
   <h3 class="text-center" style="font-size: 16px; margin: 5px 0;">SALES ORDER</h3>
 
   <table class="bordered">
@@ -334,15 +342,16 @@ export async function generateSalesOrderPdf(
   container.style.position = "absolute";
   container.style.left = "-9999px";
   container.style.top = "0";
+  container.style.width = "800px";
   document.body.appendChild(container);
 
   const element = container.querySelector(".container") || container;
 
   const opt = {
-    margin: [5, 5, 5, 5],
+    margin: [2, 2, 2, 2],
     filename: `SalesOrder_${order.customerName.replace(/\s+/g, "_")}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+    html2canvas: { scale: 2, useCORS: true, allowTaint: true, width: 760, windowWidth: 800 },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
   };
 
