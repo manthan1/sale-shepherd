@@ -341,13 +341,24 @@ A/c No.: <b>${company.bank_account_no}</b><br>
 Branch & IFS Code: <b>${company.bank_ifsc}</b>
 </td>
 
-<td width="40%" class="right" style="vertical-align:bottom;">
-<b>for ${company.name}</b><br>
-${signatureHtml}
-Authorised Signatory
+<td width="40%" style="vertical-align:bottom; text-align:right; padding-right:15px;">
+    <div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:flex-end; height:100%;">
+        
+        <div style="font-weight:bold;">
+            for ${company.name}
+        </div>
+
+        <div style="margin:15px 0;">
+            ${signatureHtml}
+        </div>
+
+        <div style="font-weight:bold;">
+            Authorised Signatory
+        </div>
+
+    </div>
 </td>
-</tr>
-</table>
+
 
 <div style="text-align:center; font-size:10px; padding:5px;">
 This is a Computer Generated Document
