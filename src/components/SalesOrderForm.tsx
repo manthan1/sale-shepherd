@@ -16,10 +16,24 @@ import { X, FileText, Info, Plus, Edit2, Trash2, Check, ChevronsUpDown, AlertTri
 import { useNavigate } from "react-router-dom";
 import { generateSalesOrderPdf, PdfProduct, PdfCompanyData } from "@/utils/generateSalesOrderPdf";
 
+export interface EditOrderData {
+  id: string;
+  customer_name: string;
+  shipping_address: string | null;
+  state: string | null;
+  contact_number: string | null;
+  order_details: string;
+  freight_expense: number | null;
+  cust_gst_number: string | null;
+  company_id: string | null;
+}
+
 interface SalesOrderFormProps {
   open: boolean;
   onClose: () => void;
   isTrialMode?: boolean;
+  editOrder?: EditOrderData | null;
+  onEditSuccess?: () => void;
 }
 
 interface OrderFormData {
@@ -70,7 +84,7 @@ const FAKE_PRODUCTS = [
   { id: "6", name: "Custom Development", rate: 80000, unit: "PROJECT", hsn_sac: "998314", tax_rate: 18 },
 ];
 
-const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormProps) => {
+const SalesOrderForm = ({ open, onClose, isTrialMode = false, editOrder, onEditSuccess }: SalesOrderFormProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -132,12 +146,86 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         .from('products')
         .select('*')
         .eq('company_id', companyProfile?.company_id);
-      
+
       if (productsData) {
         setProducts(productsData);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
+    }
+  };
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setFormData({ customerName: "", shippingAddress: "", state: "", contactNumber: "", orderDetails: "", freight_expense: "", cust_gst_number: "" });
+      setSelectedProducts([]);
+      setProductFormData({ productId: "", quantity: "", discount: "", discountedPrice: "" });
+      setEditingProduct(null);
+    }
+  }, [open]);
+
+  // Populate form fields when editing an existing order (waits for products to be loaded)
+  useEffect(() => {
+    if (editOrder && open && products.length > 0) {
+      populateEditForm(editOrder);
+    }
+  }, [editOrder, open, products]);
+
+  const populateEditForm = (order: EditOrderData) => {
+    setFormData({
+      customerName: order.customer_name,
+      shippingAddress: order.shipping_address || "",
+      state: order.state || "",
+      contactNumber: order.contact_number || "",
+      orderDetails: "",
+      freight_expense: order.freight_expense?.toString() || "",
+      cust_gst_number: order.cust_gst_number || "",
+    });
+
+    const lines = order.order_details.split('\n').filter(Boolean);
+    const parsedProducts: SelectedProduct[] = [];
+    const remainingLines: string[] = [];
+
+    lines.forEach((line, index) => {
+      const match = line.match(/^([\d.]+)\s+(.+?)(?:\s*-\s*([\d.]+)%\s*discount)?$/i);
+      if (match) {
+        const qty = parseFloat(match[1]) || 1;
+        const productName = match[2].trim();
+        const discount = parseFloat(match[3]) || 0;
+
+        const productData = products.find(p =>
+          p.name.toLowerCase() === productName.toLowerCase()
+        );
+
+        if (productData) {
+          const totalAmount = productData.rate * qty;
+          const discountedPrice = totalAmount - (totalAmount * discount / 100);
+          const maxDiscount = productData.max_discount || 0;
+          parsedProducts.push({
+            id: `edit_${index}_${Date.now()}`,
+            productId: productData.id,
+            name: productData.name,
+            rate: productData.rate,
+            unit: productData.unit || "PCS",
+            hsn_sac: productData.hsn_sac || "",
+            tax_rate: productData.tax_rate || 0,
+            quantity: qty,
+            discount,
+            discountedPrice,
+            totalAmount,
+            max_discount: maxDiscount,
+            exceedsMaxDiscount: maxDiscount > 0 && discount > maxDiscount,
+          });
+          return;
+        }
+      }
+      remainingLines.push(line);
+    });
+
+    setSelectedProducts(parsedProducts);
+    if (remainingLines.length > 0) {
+      setFormData(prev => ({ ...prev, orderDetails: remainingLines.join('\n') }));
     }
   };
 
@@ -356,26 +444,49 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           .map(p => `${p.name}: ${p.discount}% (max: ${p.max_discount}%)`)
           .join(', ');
 
-        const { error: dbError } = await supabase
-          .from('sales_orders')
-          .insert([{
-            company_id: companyProfile?.company_id,
-            customer_name: formData.customerName.trim(),
-            shipping_address: formData.shippingAddress.trim(),
-            state: formData.state.trim(),
-            contact_number: formData.contactNumber.trim(),
-            order_details: combinedOrderDetails,
-            freight_expense: parseInt(formData.freight_expense) || 0,
-            cust_gst_number: formData.cust_gst_number.trim() || null,
-            pdf_url: null,
-            is_trial: false,
-            status: 'pending_approval',
-            pending_approval_reason: `Discount exceeds maximum: ${exceedingProducts}`,
-          }]);
-
-        if (dbError) {
-          console.error('Database error:', dbError);
-          throw new Error("Failed to save order for approval");
+        if (editOrder) {
+          const { error: dbError } = await supabase
+            .from('sales_orders')
+            .update({
+              customer_name: formData.customerName.trim(),
+              shipping_address: formData.shippingAddress.trim(),
+              state: formData.state.trim(),
+              contact_number: formData.contactNumber.trim(),
+              order_details: combinedOrderDetails,
+              freight_expense: parseInt(formData.freight_expense) || 0,
+              cust_gst_number: formData.cust_gst_number.trim() || null,
+              pdf_url: null,
+              status: 'pending_approval',
+              pending_approval_reason: `Discount exceeds maximum: ${exceedingProducts}`,
+            })
+            .eq('id', editOrder.id);
+          if (dbError) {
+            console.error('Database error:', dbError);
+            throw new Error("Failed to update order for approval");
+          }
+          onEditSuccess?.();
+        } else {
+          const { error: dbError } = await supabase
+            .from('sales_orders')
+            .insert([{
+              company_id: companyProfile?.company_id,
+              created_by: user?.id ?? null,
+              customer_name: formData.customerName.trim(),
+              shipping_address: formData.shippingAddress.trim(),
+              state: formData.state.trim(),
+              contact_number: formData.contactNumber.trim(),
+              order_details: combinedOrderDetails,
+              freight_expense: parseInt(formData.freight_expense) || 0,
+              cust_gst_number: formData.cust_gst_number.trim() || null,
+              pdf_url: null,
+              is_trial: false,
+              status: 'pending_approval',
+              pending_approval_reason: `Discount exceeds maximum: ${exceedingProducts}`,
+            }]);
+          if (dbError) {
+            console.error('Database error:', dbError);
+            throw new Error("Failed to save order for approval");
+          }
         }
 
         toast({
@@ -448,32 +559,56 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
         const formattedProductsText = selectedProducts.length > 0 ? formatSelectedProductsText(selectedProducts) : '';
         const combinedOrderDetails = [formData.orderDetails.trim(), formattedProductsText].filter(Boolean).join('\n\n');
 
-        const { error: dbError } = await supabase
-          .from('sales_orders')
-          .insert([{
-            company_id: companyProfile?.company_id,
-            customer_name: formData.customerName.trim(),
-            shipping_address: formData.shippingAddress.trim(),
-            state: formData.state.trim(),
-            contact_number: formData.contactNumber.trim(),
-            order_details: combinedOrderDetails,
-            freight_expense: parseInt(formData.freight_expense) || 0,
-            cust_gst_number: formData.cust_gst_number.trim() || null,
-            pdf_url: pdfUrl || null,
-            is_trial: false,
-            status: 'approved',
-          }]);
-
-        if (dbError) {
-          console.error('Database error:', dbError);
+        if (editOrder) {
+          const { error: dbError } = await supabase
+            .from('sales_orders')
+            .update({
+              customer_name: formData.customerName.trim(),
+              shipping_address: formData.shippingAddress.trim(),
+              state: formData.state.trim(),
+              contact_number: formData.contactNumber.trim(),
+              order_details: combinedOrderDetails,
+              freight_expense: parseInt(formData.freight_expense) || 0,
+              cust_gst_number: formData.cust_gst_number.trim() || null,
+              pdf_url: pdfUrl || null,
+              status: 'approved',
+              pending_approval_reason: null,
+            })
+            .eq('id', editOrder.id);
+          if (dbError) {
+            console.error('Database error:', dbError);
+          }
+          onEditSuccess?.();
+        } else {
+          const { error: dbError } = await supabase
+            .from('sales_orders')
+            .insert([{
+              company_id: companyProfile?.company_id,
+              created_by: user?.id ?? null,
+              customer_name: formData.customerName.trim(),
+              shipping_address: formData.shippingAddress.trim(),
+              state: formData.state.trim(),
+              contact_number: formData.contactNumber.trim(),
+              order_details: combinedOrderDetails,
+              freight_expense: parseInt(formData.freight_expense) || 0,
+              cust_gst_number: formData.cust_gst_number.trim() || null,
+              pdf_url: pdfUrl || null,
+              is_trial: false,
+              status: 'approved',
+            }]);
+          if (dbError) {
+            console.error('Database error:', dbError);
+          }
         }
       }
 
       toast({
         title: "Success",
-        description: isTrialMode
-          ? "Sales order generated successfully!"
-          : "Sales order submitted successfully!",
+        description: editOrder
+          ? "Sales order updated successfully!"
+          : isTrialMode
+            ? "Sales order generated successfully!"
+            : "Sales order submitted successfully!",
       });
 
       // Open PDF
@@ -508,7 +643,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <FileText className="w-5 h-5" />
-              {isTrialMode ? "Try Sales Order Generation" : "Generate Sales Order"}
+              {editOrder ? "Edit Sales Order" : isTrialMode ? "Try Sales Order Generation" : "Generate Sales Order"}
             </DialogTitle>
           </DialogHeader>
         </div>
@@ -988,7 +1123,9 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-              {isSubmitting ? "Submitting..." : "Submit Order"}
+              {isSubmitting
+                ? (editOrder ? "Updating..." : "Submitting...")
+                : (editOrder ? "Update Order" : "Submit Order")}
             </Button>
           </div>
         </form>

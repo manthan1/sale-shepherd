@@ -161,10 +161,14 @@ const PendingApprovals = () => {
         });
       }
 
-      // Update order status to approved
+      // Update order status to approved and persist pdf_url
+      const updatePayload: { status: string; pdf_url?: string } = { status: 'approved' };
+      if (pdfUrl && !pdfUrl.startsWith('blob:')) {
+        updatePayload.pdf_url = pdfUrl;
+      }
       const { error } = await supabase
         .from('sales_orders')
-        .update({ status: 'approved' })
+        .update(updatePayload)
         .eq('id', order.id);
 
       if (error) throw error;

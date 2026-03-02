@@ -6,9 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, ExternalLink, ArrowLeft } from "lucide-react";
+import { FileText, ExternalLink, ArrowLeft, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import SalesOrderForm from "@/components/SalesOrderForm";
 
 interface SalesOrder {
   id: string;
@@ -21,6 +22,9 @@ interface SalesOrder {
   is_trial: boolean;
   status: string;
   created_at: string;
+  freight_expense: number | null;
+  cust_gst_number: string | null;
+  company_id: string | null;
 }
 
 const SalesOrders = () => {
@@ -29,18 +33,40 @@ const SalesOrders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [editOrder, setEditOrder] = useState<SalesOrder | null>(null);
 
   useEffect(() => {
-    fetchSalesOrders();
-  }, []);
+    if (user) {
+      fetchSalesOrders();
+    }
+  }, [user]);
 
   const fetchSalesOrders = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      // Fetch the current user's role first
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .single();
+
+      const role = profile?.role ?? 'employee';
+      setUserRole(role);
+
+      // Admins see all company orders; employees see only their own
+      let query = supabase
         .from('sales_orders')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (role !== 'admin') {
+        query = query.eq('created_by', user!.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching sales orders:', error);
@@ -80,6 +106,16 @@ const SalesOrders = () => {
   }
 
   return (
+    <>
+    <SalesOrderForm
+      open={!!editOrder}
+      onClose={() => setEditOrder(null)}
+      editOrder={editOrder}
+      onEditSuccess={() => {
+        setEditOrder(null);
+        fetchSalesOrders();
+      }}
+    />
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-6 sm:py-8 px-4 space-y-6 sm:space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -135,6 +171,7 @@ const SalesOrders = () => {
                       <TableHead className="min-w-[100px]">Status</TableHead>
                       <TableHead className="min-w-[120px]">Date</TableHead>
                       <TableHead className="min-w-[120px]">PDF</TableHead>
+                      <TableHead className="min-w-[80px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -188,6 +225,17 @@ const SalesOrders = () => {
                             <span className="text-muted-foreground">No PDF</span>
                           )}
                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditOrder(order)}
+                            className="flex items-center gap-2"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Edit
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -198,6 +246,7 @@ const SalesOrders = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 
