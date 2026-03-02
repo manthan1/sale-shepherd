@@ -344,8 +344,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
     try {
       // Check if any product exceeds max discount
       const hasExcessDiscount = selectedProducts.some(p => p.exceedsMaxDiscount);
-      const isAdmin = !isTrialMode && companyProfile?.role === 'admin';
-      const needsApproval = hasExcessDiscount && !isAdmin && !isTrialMode;
+      const needsApproval = hasExcessDiscount && !isTrialMode;
 
       if (needsApproval) {
         // Save as pending approval instead of sending to webhook
