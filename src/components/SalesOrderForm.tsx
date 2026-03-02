@@ -460,7 +460,7 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false }: SalesOrderFormPr
             order_details: combinedOrderDetails,
             freight_expense: parseInt(formData.freight_expense) || 0,
             cust_gst_number: formData.cust_gst_number.trim() || null,
-            pdf_url: null,
+            pdf_url: pdfUrl || null,
             is_trial: false,
             status: 'approved',
           }]);
