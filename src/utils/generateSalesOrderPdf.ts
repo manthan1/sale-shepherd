@@ -180,9 +180,8 @@ function buildHtml(company: PdfCompanyData, order: PdfOrderData): string {
     : "";
 
   // Watermark: CSS ::before won't render in html2canvas, so we use an inline overlay div
-  const watermarkHtml = company.pdf_background_url
-    ? `<div style="position: absolute; inset: 0; background-image: url('${company.pdf_background_url}'); background-size: cover; background-position: center; opacity: 0.08; z-index: 0; pointer-events: none;"></div>`
-    : "";
+  const watermarkUrl = company.pdf_background_url || "https://i.ibb.co/0RJFHGhh/1755585947227-nandi.jpg";
+  const watermarkHtml = `<div style="position: absolute; inset: 0; background-image: url('${watermarkUrl}'); background-size: contain; background-position: center; background-repeat: no-repeat; opacity: 0.08; z-index: 0; pointer-events: none;"></div>`;
 
   return `
 <html>
@@ -344,7 +343,7 @@ Branch & IFS Code: <b>${company.bank_ifsc}</b>
 
 <td width="40%" class="right" style="vertical-align:bottom;">
 <b>for ${company.name}</b><br>
-${signatureHtml}<br>
+${signatureHtml}
 Authorised Signatory
 </td>
 </tr>
