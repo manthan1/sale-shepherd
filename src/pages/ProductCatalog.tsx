@@ -18,6 +18,7 @@ interface Product {
   hsn_sac: string | null;
   unit: string | null;
   tax_rate: number;
+  max_discount: number | null;
   created_at: string;
 }
 
@@ -233,7 +234,7 @@ const ProductCatalog = () => {
       hsn_sac: product.hsn_sac || "",
       unit: product.unit || "",
       tax_rate: product.tax_rate || 0,
-      max_discount: (product as any).max_discount || 0,
+      max_discount: product.max_discount || 0,
     });
     setShowProductForm(true);
   };
@@ -357,9 +358,13 @@ const ProductCatalog = () => {
                             <span className="text-muted-foreground">Unit:</span>
                             <span className="ml-1">{product.unit || "-"}</span>
                           </div>
-                          <div className="col-span-2">
+                          <div>
                             <span className="text-muted-foreground">Tax Rate:</span>
                             <span className="ml-1">{product.tax_rate}%</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Max Discount:</span>
+                            <span className="ml-1">{product.max_discount != null ? `${product.max_discount}%` : "-"}</span>
                           </div>
                         </div>
                       </div>
@@ -375,6 +380,7 @@ const ProductCatalog = () => {
                         <TableHead>HSN/SAC</TableHead>
                         <TableHead>Unit</TableHead>
                         <TableHead>Tax Rate (%)</TableHead>
+                        <TableHead>Max Discount (%)</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -386,6 +392,7 @@ const ProductCatalog = () => {
                           <TableCell>{product.hsn_sac || "-"}</TableCell>
                           <TableCell>{product.unit || "-"}</TableCell>
                           <TableCell>{product.tax_rate}%</TableCell>
+                          <TableCell>{product.max_discount != null ? `${product.max_discount}%` : "-"}</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
                               <Button
