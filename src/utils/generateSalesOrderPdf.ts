@@ -1,4 +1,5 @@
 import html2pdf from "html2pdf.js";
+import { supabase } from "@/integrations/supabase/client";
 
 const INDIAN_STATE_CODES: Record<string, string> = {
   "Andhra Pradesh": "37", "Arunachal Pradesh": "12", "Assam": "18", "Bihar": "10",
@@ -89,10 +90,10 @@ function buildHtml(company: PdfCompanyData, order: PdfOrderData): string {
   let totalQuantity = 0;
   const taxBreakdown: Record<number, number> = {};
 
-  const itemRowsHtml = order.products.map((product, i) => {
-    const baseAmount = product.rate * product.quantity;
-    const discountAmount = baseAmount * (product.discount / 100);
-    const lineAmount = baseAmount - discountAmount;
+  const rows = order.products.map((product, i) => {
+    const amount = product.rate * product.quantity;
+    const discountAmount = amount * (product.discount / 100);
+    const lineAmount = amount - discountAmount;
     subTotal += lineAmount;
     totalQuantity += product.quantity;
 
@@ -101,17 +102,16 @@ function buildHtml(company: PdfCompanyData, order: PdfOrderData): string {
     taxBreakdown[taxRate] += lineAmount;
 
     return `
-      <tr>
-        <td class="text-center">${i + 1}</td>
-        <td style="font-weight: bold;">${product.name}</td>
-        <td>${product.hsn_sac || ""}</td>
-        <td>${orderDate}</td>
-        <td class="text-right"><strong>${product.quantity.toFixed(2)}</strong> ${product.unit}</td>
-        <td class="text-right">${product.rate.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td>${product.unit}</td>
-        <td class="text-right">${product.discount > 0 ? product.discount.toFixed(2) : "0.00"}</td>
-        <td class="text-right"><strong>${lineAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
-      </tr>
+    <tr>
+        <td align="center">${i + 1}</td>
+        <td>${product.name}</td>
+        <td align="center">${product.hsn_sac || ""}</td>
+        <td align="right">${product.quantity.toFixed(2)}</td>
+        <td align="right">${product.rate.toFixed(2)}</td>
+        <td align="center">${product.unit}</td>
+        <td align="right">${product.discount > 0 ? product.discount.toFixed(2) : "0.00"}</td>
+        <td align="right"><b>${lineAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></td>
+    </tr>
     `;
   }).join("");
 
@@ -128,202 +128,232 @@ function buildHtml(company: PdfCompanyData, order: PdfOrderData): string {
       const halfTax = (taxableAmount * halfRate) / 100;
       totalTax += halfTax * 2;
       taxRowsHtml += `
-        <tr>
-          <td colspan="8" class="text-right bold">OUTPUT CGST ${halfRate.toFixed(2)}%</td>
-          <td class="text-right bold">${halfTax.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        </tr>
-        <tr>
-          <td colspan="8" class="text-right bold">OUTPUT SGST ${halfRate.toFixed(2)}%</td>
-          <td class="text-right bold">${halfTax.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        </tr>
+<tr>
+<td colspan="7" class="right bold">OUTPUT CGST ${halfRate.toFixed(2)}%</td>
+<td class="right">${halfTax.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+</tr>
+
+<tr>
+<td colspan="7" class="right bold">OUTPUT SGST ${halfRate.toFixed(2)}%</td>
+<td class="right">${halfTax.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+</tr>
       `;
     } else {
       const igst = (taxableAmount * rate) / 100;
       totalTax += igst;
       taxRowsHtml += `
-        <tr>
-          <td colspan="8" class="text-right bold">OUTPUT IGST ${rate.toFixed(0)}%</td>
-          <td class="text-right bold">${igst.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        </tr>
+<tr>
+<td colspan="7" class="right bold">OUTPUT IGST ${rate.toFixed(0)}%</td>
+<td class="right">${igst.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+</tr>
       `;
     }
   }
 
-  const freightExpense = order.freightExpense || 0;
+  const freight = order.freightExpense || 0;
   let freightRowHtml = "";
-  if (freightExpense > 0) {
+  if (freight > 0) {
     freightRowHtml = `
-      <tr>
-        <td colspan="8" class="text-right bold">Freight Expense</td>
-        <td class="text-right bold">${freightExpense.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      </tr>
+<tr>
+<td colspan="7" class="right bold">Freight Expense</td>
+<td class="right">${freight.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+</tr>
     `;
   }
 
-  const grandTotalRaw = subTotal + freightExpense + totalTax;
-  const grandTotal = Math.round(grandTotalRaw);
-  const roundOff = grandTotal - grandTotalRaw;
-  const amountInWords = numberToWords(grandTotal);
+  const totalBeforeRound = subTotal + freight + totalTax;
+  const finalTotal = Math.round(totalBeforeRound);
+  const roundOff = finalTotal - totalBeforeRound;
+  const amountWords = numberToWords(finalTotal);
   const defaultUnit = order.products[0]?.unit || "Box";
 
-  const watermarkHtml = company.pdf_background_url
-    ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.08; z-index: 0; pointer-events: none;">
-        <img src="${company.pdf_background_url}" alt="Watermark" style="width: 400px; height: auto;" crossorigin="anonymous">
-      </div>`
-    : "";
-
   const logoHtml = company.logo_url
-    ? `<div style="padding-right: 15px;"><img src="${company.logo_url}" alt="Company Logo" style="width: 70px; height: auto;" crossorigin="anonymous"></div>`
+    ? `<img src="${company.logo_url}" width="70" crossorigin="anonymous"><br>`
     : "";
 
   const signatureHtml = company.authorized_signature_url
-    ? `<img src="${company.authorized_signature_url}" alt="Signature" style="width: 120px; height: auto; margin: 8px 0;" crossorigin="anonymous">`
-    : `<br><br><br>`;
+    ? `<img src="${company.authorized_signature_url}" width="120" style="margin: 8px 0;" crossorigin="anonymous">`
+    : `<br><br>`;
 
   const customerGstHtml = order.custGstNumber
-    ? `<br><span class="bold">GSTIN:</span> ${order.custGstNumber}`
+    ? `<br>GSTIN: ${order.custGstNumber}`
+    : "";
+
+  // Watermark: CSS ::before won't render in html2canvas, so we use an inline overlay div
+  const watermarkHtml = company.pdf_background_url
+    ? `<div style="position: absolute; inset: 0; background-image: url('${company.pdf_background_url}'); background-size: cover; background-position: center; opacity: 0.08; z-index: 0; pointer-events: none;"></div>`
     : "";
 
   return `
 <html>
 <head>
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 10.5px; color: #000; margin: 0; padding: 0; }
-    .container { width: 750px; margin: auto; border: 1px solid #000; padding: 5px; position: relative; overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    td, th { padding: 4px; vertical-align: top; word-wrap: break-word; overflow: hidden; }
-    .bordered, .bordered td, .bordered th { border: 1px solid #000; }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .bold { font-weight: bold; }
-    .items-table td { padding-top: 6px; padding-bottom: 6px; }
-  </style>
+<style>
+body {
+    font-family: Arial;
+    font-size: 12px;
+}
+
+.outer {
+    width: 900px;
+    margin:auto;
+    border:2px solid black;
+    padding:0;
+    position: relative;
+}
+
+.outer > * {
+    position: relative;
+    z-index: 1;
+}
+
+table {
+    width:100%;
+    border-collapse: collapse;
+}
+
+td, th {
+    border:1px solid black;
+    padding:5px;
+}
+
+.header-title {
+    text-align:center;
+    font-size:18px;
+    font-weight:bold;
+    padding:8px;
+    border-bottom:1px solid black;
+}
+
+.right { text-align:right; }
+.center { text-align:center; }
+.bold { font-weight:bold; }
+
+</style>
 </head>
+
 <body>
-<div class="container">
-  ${watermarkHtml}
-  <h3 class="text-center" style="font-size: 16px; margin: 5px 0;">SALES ORDER</h3>
 
-  <table class="bordered">
-    <tr>
-      <td style="width: 55%;" rowspan="2">
-        <div style="display: flex; align-items: center;">
-          ${logoHtml}
-          <div>
-            <span class="bold" style="font-size: 14px;">${company.name}</span><br>
-            ${company.address}<br>
-            <span class="bold">GSTIN/UIN:</span> ${company.gstin}<br>
-            <span class="bold">State Name:</span> ${company.state}${companyStateCode ? `, Code : ${companyStateCode}` : ""}
-          </div>
-        </div>
-      </td>
-      <td style="width: 45%;">
-        <table class="bordered">
-          <tr><td>Voucher No.</td><td class="bold">${voucherNo}</td></tr>
-          <tr><td>Dated</td><td class="bold">${orderDate}</td></tr>
-        </table>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <table class="bordered">
-          <tr><td>Buyer's Ref./Order No.</td><td class="bold">${voucherNo}</td></tr>
-          <tr><td>Mode/Terms of Payment</td><td></td></tr>
-          <tr><td>Other References</td><td></td></tr>
-          <tr><td>Dispatched through</td><td></td></tr>
-          <tr><td>Destination</td><td></td></tr>
-          <tr><td style="height: 40px;">Terms of Delivery</td><td></td></tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+<div class="outer">
 
-  <!-- Address Section -->
-  <table class="bordered" style="margin-top: 5px;">
-    <tr>
-      <td style="width: 50%;">
-        <span class="bold">Consignee (Ship to)</span><br>
-        <span class="bold" style="font-size: 13px;">${order.customerName}</span><br>
-        ${order.shippingAddress}<br>
-        <span class="bold">State Name:</span> ${order.customerState}${custStateCode ? `, Code : ${custStateCode}` : ""}<br>
-        <span class="bold">Contact:</span> ${order.contactNumber}${customerGstHtml}
-      </td>
-      <td style="width: 50%;">
-        <span class="bold">Buyer (Bill to)</span><br>
-        <span class="bold" style="font-size: 13px;">${order.customerName}</span><br>
-        ${order.shippingAddress}<br>
-        <span class="bold">State Name:</span> ${order.customerState}${custStateCode ? `, Code : ${custStateCode}` : ""}<br>
-        <span class="bold">Contact:</span> ${order.contactNumber}${customerGstHtml}
-      </td>
-    </tr>
-  </table>
+${watermarkHtml}
 
-  <!-- Items Table -->
-  <table class="bordered items-table" style="margin-top: 5px;">
-    <thead>
-      <tr>
-        <th class="text-center">Sl No.</th>
-        <th>Description of Goods</th>
-        <th>HSN/SAC</th>
-        <th style="width: 70px;">Due on</th>
-        <th class="text-right">Quantity</th>
-        <th class="text-right">Rate</th>
-        <th>per</th>
-        <th class="text-right">Disc. %</th>
-        <th class="text-right">Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${itemRowsHtml}
-      <tr>
-        <td colspan="8" class="text-right bold">Sub Total</td>
-        <td class="text-right bold">${subTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      </tr>
-      ${freightRowHtml}
-      ${taxRowsHtml}
-      <tr>
-        <td colspan="8" class="text-right bold">Round Off</td>
-        <td class="text-right bold">${roundOff.toFixed(2)}</td>
-      </tr>
-    </tbody>
-    <tfoot>
-      <tr class="bold">
-        <td colspan="4" class="text-center">Total</td>
-        <td class="text-right">${totalQuantity.toFixed(2)} ${defaultUnit}</td>
-        <td colspan="3"></td>
-        <td class="text-right" style="font-size: 14px;">₹ ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      </tr>
-    </tfoot>
-  </table>
+<div class="header-title">SALES ORDER</div>
 
-  <!-- Amount in Words -->
-  <table class="bordered" style="margin-top: 5px;">
-    <tr>
-      <td>Amount Chargeable (in words)<br><span class="bold text-center" style="display: block; margin-top: 5px;">INR ${amountInWords} Only</span></td>
-      <td class="text-right" style="width: 20%;">E. & O.E</td>
-    </tr>
-  </table>
+<table>
+<tr>
+<td width="60%" style="vertical-align:top;">
+${logoHtml}
+<b>${company.name}</b><br>
+${company.address}<br>
+GSTIN/UIN: ${company.gstin}<br>
+State Name: ${company.state}${companyStateCode ? `, Code : ${companyStateCode}` : ""}
+</td>
 
-  <!-- Bank Details & Signature -->
-  <table style="margin-top: 5px;">
-    <tr>
-      <td style="width: 50%;">
-        <span class="bold">Company's Bank Details</span><br>
-        A/c Holder's Name: <span class="bold">${company.bank_account_holder}</span><br>
-        Bank Name: <span class="bold">${company.bank_name}</span><br>
-        A/c No.: <span class="bold">${company.bank_account_no}</span><br>
-        Branch & IFS Code: <span class="bold">${company.bank_ifsc}</span>
-      </td>
-      <td style="width: 50%; vertical-align: bottom; text-align: right;">
-        <span class="bold">for ${company.name}</span><br>
-        ${signatureHtml}
-        Authorised Signatory
-      </td>
-    </tr>
-    <tr>
-      <td colspan="2" class="text-center" style="font-size: 9px; padding-top: 15px;">This is a Computer Generated Document</td>
-    </tr>
-  </table>
+<td width="40%" style="padding:0;">
+<table>
+<tr><td><b>Voucher No.</b></td><td class="right bold">${voucherNo}</td></tr>
+<tr><td><b>Dated</b></td><td class="right bold">${orderDate}</td></tr>
+<tr><td><b>Buyer's Ref./Order No.</b></td><td class="right">${voucherNo}</td></tr>
+<tr><td>Mode/Terms of Payment</td><td></td></tr>
+<tr><td>Other References</td><td></td></tr>
+<tr><td>Dispatched through</td><td></td></tr>
+<tr><td>Destination</td><td></td></tr>
+<tr><td>Terms of Delivery</td><td></td></tr>
+</table>
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="50%">
+<b>Consignee (Ship to)</b><br>
+${order.customerName}<br>
+${order.shippingAddress}<br>
+State Name: ${order.customerState}${custStateCode ? `, Code : ${custStateCode}` : ""}<br>
+Contact: ${order.contactNumber}${customerGstHtml}
+</td>
+
+<td width="50%">
+<b>Buyer (Bill to)</b><br>
+${order.customerName}<br>
+${order.shippingAddress}<br>
+State Name: ${order.customerState}${custStateCode ? `, Code : ${custStateCode}` : ""}<br>
+Contact: ${order.contactNumber}${customerGstHtml}
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<th width="5%">Sl</th>
+<th width="35%">Description</th>
+<th width="10%">HSN</th>
+<th width="10%">Qty</th>
+<th width="10%">Rate</th>
+<th width="5%">Per</th>
+<th width="10%">Disc%</th>
+<th width="15%">Amount</th>
+</tr>
+
+${rows}
+
+<tr>
+<td colspan="7" class="right bold">Sub Total</td>
+<td class="right bold">${subTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+</tr>
+
+${freightRowHtml}
+
+${taxRowsHtml}
+
+<tr>
+<td colspan="7" class="right bold">Round Off</td>
+<td class="right">${roundOff.toFixed(2)}</td>
+</tr>
+
+<tr>
+<td colspan="4" class="bold">Total</td>
+<td colspan="3" class="center bold">${totalQuantity.toFixed(2)} ${defaultUnit}</td>
+<td class="right bold">₹ ${finalTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+</tr>
+
+</table>
+
+<table>
+<tr>
+<td width="70%">
+<b>Amount Chargeable (in words)</b><br>
+INR ${amountWords} Only
+</td>
+<td width="30%" class="right">
+E. & O.E
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="60%">
+<b>Company's Bank Details</b><br>
+A/c Holder's Name: <b>${company.bank_account_holder}</b><br>
+Bank Name: <b>${company.bank_name}</b><br>
+A/c No.: <b>${company.bank_account_no}</b><br>
+Branch & IFS Code: <b>${company.bank_ifsc}</b>
+</td>
+
+<td width="40%" class="right">
+<b>for ${company.name}</b><br>
+${signatureHtml}
+Authorised Signatory
+</td>
+</tr>
+</table>
+
+<div style="text-align:center; font-size:10px; padding:5px;">
+This is a Computer Generated Document
+</div>
+
 </div>
 </body>
 </html>
@@ -342,22 +372,58 @@ export async function generateSalesOrderPdf(
   container.style.position = "absolute";
   container.style.left = "-9999px";
   container.style.top = "0";
-  container.style.width = "800px";
+  container.style.width = "950px";
   document.body.appendChild(container);
 
-  const element = container.querySelector(".container") || container;
+  const element = container.querySelector(".outer") || container;
 
   const opt = {
     margin: [2, 2, 2, 2],
     filename: `SalesOrder_${order.customerName.replace(/\s+/g, "_")}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, allowTaint: true, width: 760, windowWidth: 800 },
+    html2canvas: { scale: 2, useCORS: true, allowTaint: true, width: 920, windowWidth: 950 },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
   };
 
   const pdfBlob: Blob = await html2pdf().set(opt).from(element).outputPdf("blob");
   document.body.removeChild(container);
 
-  const blobUrl = URL.createObjectURL(pdfBlob);
-  return blobUrl;
+  // Upload PDF to Supabase storage
+  const storagePath = await uploadPdfToStorage(pdfBlob, order.customerName, order.voucherNumber);
+
+  // If upload succeeded, return the public URL; otherwise fall back to blob URL
+  if (storagePath) {
+    const { data: urlData } = supabase.storage.from("company_assets").getPublicUrl(storagePath);
+    if (urlData?.publicUrl) {
+      return urlData.publicUrl;
+    }
+  }
+
+  // Fallback to local blob URL
+  return URL.createObjectURL(pdfBlob);
+}
+
+async function uploadPdfToStorage(blob: Blob, customerName: string, voucherNumber?: string): Promise<string | null> {
+  try {
+    const timestamp = Date.now();
+    const safeName = customerName.replace(/[^a-zA-Z0-9]/g, "_");
+    const fileName = `sales_orders/${safeName}_${timestamp}.pdf`;
+
+    const { data, error } = await supabase.storage
+      .from("company_assets")
+      .upload(fileName, blob, {
+        contentType: "application/pdf",
+        upsert: false,
+      });
+
+    if (error) {
+      console.error("PDF upload error:", error);
+      return null;
+    }
+
+    return data.path;
+  } catch (err) {
+    console.error("PDF upload failed:", err);
+    return null;
+  }
 }
