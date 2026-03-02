@@ -237,7 +237,7 @@ td, th {
 
 ${watermarkHtml}
 
-<div class="header-title">SALES ORDER</div>
+<div class="header-title">SALES &nbsp; ORDER</div>
 
 <table>
 <tr>
@@ -342,9 +342,9 @@ A/c No.: <b>${company.bank_account_no}</b><br>
 Branch & IFS Code: <b>${company.bank_ifsc}</b>
 </td>
 
-<td width="40%" class="right">
+<td width="40%" class="right" style="vertical-align:bottom;">
 <b>for ${company.name}</b><br>
-${signatureHtml}
+${signatureHtml}<br>
 Authorised Signatory
 </td>
 </tr>
