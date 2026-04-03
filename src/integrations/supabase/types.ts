@@ -238,6 +238,7 @@ export type Database = {
           shipping_address: string | null
           state: string | null
           status: string
+          structured_products: Json | null
           updated_at: string
         }
         Insert: {
@@ -256,6 +257,7 @@ export type Database = {
           shipping_address?: string | null
           state?: string | null
           status?: string
+          structured_products?: Json | null
           updated_at?: string
         }
         Update: {
@@ -274,6 +276,7 @@ export type Database = {
           shipping_address?: string | null
           state?: string | null
           status?: string
+          structured_products?: Json | null
           updated_at?: string
         }
         Relationships: [

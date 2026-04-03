@@ -114,36 +114,49 @@ const PendingApprovals = () => {
 
       if (!companyData) throw new Error("Company data not found");
 
-      // Parse order_details back into products (best effort)
-      // Order details format: "qty name - discount% discount" per line
-      const pdfProducts: PdfProduct[] = [];
-      const lines = order.order_details.split('\n').filter(Boolean);
-      for (const line of lines) {
-        const match = line.match(/^([\d.]+)\s+(.+?)(?:\s*-\s*([\d.]+)%\s*discount)?$/i);
-        if (match) {
-          const qty = parseFloat(match[1]) || 1;
-          const productName = match[2].trim();
-          const discount = parseFloat(match[3]) || 0;
+      // Use structured_products JSON if available, otherwise fall back to text parsing
+      let pdfProducts: PdfProduct[] = [];
+      const structuredProducts = (order as any).structured_products;
+      
+      if (structuredProducts && Array.isArray(structuredProducts) && structuredProducts.length > 0) {
+        pdfProducts = structuredProducts.map((p: any) => ({
+          name: p.name || "",
+          hsn_sac: p.hsn_sac || "",
+          quantity: p.quantity || 1,
+          rate: p.rate || 0,
+          unit: p.unit || "PCS",
+          discount: p.discount || 0,
+          tax_rate: p.tax_rate || 0,
+        }));
+      } else {
+        // Fallback: Parse order_details text (legacy orders)
+        const lines = order.order_details.split('\n').filter(Boolean);
+        for (const line of lines) {
+          const match = line.match(/^([\d.]+)\s+(.+?)(?:\s*-\s*([\d.]+)%\s*discount)?$/i);
+          if (match) {
+            const qty = parseFloat(match[1]) || 1;
+            const productName = match[2].trim();
+            const discount = parseFloat(match[3]) || 0;
 
-          // Try to find actual product in DB
-          const { data: productData } = await supabase
-            .from('products')
-            .select('*')
-            .eq('company_id', order.company_id!)
-            .ilike('name', productName)
-            .limit(1)
-            .single();
+            const { data: productData } = await supabase
+              .from('products')
+              .select('*')
+              .eq('company_id', order.company_id!)
+              .ilike('name', productName)
+              .limit(1)
+              .single();
 
-          if (productData) {
-            pdfProducts.push({
-              name: productData.name,
-              hsn_sac: productData.hsn_sac || "",
-              quantity: qty,
-              rate: productData.rate,
-              unit: productData.unit || "PCS",
-              discount,
-              tax_rate: productData.tax_rate || 0,
-            });
+            if (productData) {
+              pdfProducts.push({
+                name: productData.name,
+                hsn_sac: productData.hsn_sac || "",
+                quantity: qty,
+                rate: productData.rate,
+                unit: productData.unit || "PCS",
+                discount,
+                tax_rate: productData.tax_rate || 0,
+              });
+            }
           }
         }
       }
