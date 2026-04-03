@@ -353,9 +353,11 @@ const PendingApprovals = () => {
             </DialogDescription>
           </DialogHeader>
           {actionDialog.order?.pending_approval_reason && (
-            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded">
-              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-              <span>{actionDialog.order.pending_approval_reason}</span>
+            <div className="max-h-[40vh] overflow-y-auto rounded border border-destructive/20">
+              <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 p-3">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span className="whitespace-pre-wrap break-words">{actionDialog.order.pending_approval_reason}</span>
+              </div>
             </div>
           )}
           <DialogFooter>
