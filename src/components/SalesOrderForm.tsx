@@ -494,7 +494,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false, editOrder, onEditS
               is_trial: false,
               status: 'pending_approval',
               pending_approval_reason: `Discount exceeds maximum: ${exceedingProducts}`,
-            }]);
+              structured_products: structuredProducts,
+            } as any]);
           if (dbError) {
             console.error('Database error:', dbError);
             throw new Error("Failed to save order for approval");
