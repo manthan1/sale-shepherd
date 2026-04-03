@@ -444,6 +444,17 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false, editOrder, onEditS
           .map(p => `${p.name}: ${p.discount}% (max: ${p.max_discount}%)`)
           .join(', ');
 
+        // Build structured products JSON for reliable reconstruction
+        const structuredProducts = selectedProducts.map(p => ({
+          name: p.name,
+          hsn_sac: p.hsn_sac,
+          quantity: p.quantity,
+          rate: p.rate,
+          unit: p.unit,
+          discount: p.discount,
+          tax_rate: p.tax_rate,
+        }));
+
         if (editOrder) {
           const { error: dbError } = await supabase
             .from('sales_orders')
@@ -458,7 +469,8 @@ const SalesOrderForm = ({ open, onClose, isTrialMode = false, editOrder, onEditS
               pdf_url: null,
               status: 'pending_approval',
               pending_approval_reason: `Discount exceeds maximum: ${exceedingProducts}`,
-            })
+              structured_products: structuredProducts,
+            } as any)
             .eq('id', editOrder.id);
           if (dbError) {
             console.error('Database error:', dbError);
