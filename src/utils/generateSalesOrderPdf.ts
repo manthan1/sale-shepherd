@@ -236,6 +236,11 @@ table {
     page-break-inside: auto;
 }
 
+td, th {
+    padding: 6px 5px;
+    line-height: 1.3;
+}
+
 
 </style>
 </head>
@@ -398,7 +403,7 @@ export async function generateSalesOrderPdf(
   const element = container.querySelector(".outer") || container;
 
   const opt = {
-    margin: [2, 2, 2, 2],
+    margin: [5, 5, 5, 5],
     filename: `SalesOrder_${order.customerName.replace(/\s+/g, "_")}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, allowTaint: true, width: 920, windowWidth: 950 },
