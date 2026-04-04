@@ -227,6 +227,16 @@ td, th {
 .center { text-align:center; }
 .bold { font-weight:bold; }
 
+tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+table {
+    page-break-inside: auto;
+}
+
+
 </style>
 </head>
 
