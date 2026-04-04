@@ -227,6 +227,16 @@ td, th {
 .center { text-align:center; }
 .bold { font-weight:bold; }
 
+tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+table {
+    page-break-inside: auto;
+}
+
+
 </style>
 </head>
 
@@ -393,6 +403,7 @@ export async function generateSalesOrderPdf(
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, allowTaint: true, width: 920, windowWidth: 950 },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
   };
 
   const pdfBlob: Blob = await html2pdf().set(opt).from(element).outputPdf("blob");
