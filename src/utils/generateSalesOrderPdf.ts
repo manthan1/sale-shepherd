@@ -236,6 +236,11 @@ table {
     page-break-inside: auto;
 }
 
+td, th {
+    padding: 6px 5px;
+    line-height: 1.3;
+}
+
 
 </style>
 </head>
