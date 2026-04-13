@@ -334,19 +334,19 @@ ${taxRowsHtml}
 
 </table>
 
-<div style="page-break-inside: avoid; break-inside: avoid; display:block;">
-
-<div style="display:flex; margin-top:-1px; border:1px solid black; page-break-inside: avoid; break-inside: avoid;">
+<div class="pdf-amount-section" style="margin-top:-1px; border:1px solid black; page-break-inside: avoid; break-inside: avoid;">
+<div style="display:flex;">
 <div style="width:70%; padding:6px 8px; border-right:1px solid black; box-sizing:border-box;">
-<b>Amount Chargeable (in words)</b><br>
-INR ${amountWords} Only
+<b>Amount Chargeable (in words):</b> INR ${amountWords} Only
 </div>
 <div style="width:30%; padding:6px 8px; text-align:right; box-sizing:border-box;">
 E. & O.E
 </div>
 </div>
+</div>
 
-<div style="display:flex; min-height:190px; border-left:1px solid black; border-right:1px solid black; border-bottom:1px solid black; page-break-inside: avoid; break-inside: avoid;">
+<div class="pdf-bank-section" style="page-break-inside: avoid; break-inside: avoid;">
+<div style="display:flex; min-height:190px; border-left:1px solid black; border-right:1px solid black; border-bottom:1px solid black;">
 <div style="width:60%; padding:12px 10px; border-right:1px solid black; box-sizing:border-box;">
 <b>Company's Bank Details</b><br>
 A/c Holder's Name: <b>${company.bank_account_holder}</b><br>
@@ -373,13 +373,69 @@ Authorised Signatory
 <div style="border-left:1px solid black; border-right:1px solid black; border-bottom:1px solid black; text-align:center; font-size:10px; padding:5px;">
 This is a Computer Generated Document
 </div>
-
 </div>
 
 </div>
 </body>
 </html>
   `;
+}
+
+async function waitForPdfImages(container: HTMLElement): Promise<void> {
+  const images = Array.from(container.querySelectorAll("img"));
+
+  await Promise.all(
+    images.map((image) => {
+      if (image.complete) {
+        return Promise.resolve();
+      }
+
+      return new Promise<void>((resolve) => {
+        const finish = () => resolve();
+        image.addEventListener("load", finish, { once: true });
+        image.addEventListener("error", finish, { once: true });
+      });
+    })
+  );
+}
+
+function applyFooterPageBreaks(root: HTMLElement, margins: [number, number, number, number]) {
+  const amountSection = root.querySelector(".pdf-amount-section") as HTMLElement | null;
+  const bankSection = root.querySelector(".pdf-bank-section") as HTMLElement | null;
+
+  if (!amountSection || !bankSection) return;
+
+  amountSection.style.pageBreakBefore = "auto";
+  amountSection.style.breakBefore = "auto";
+  bankSection.style.pageBreakBefore = "auto";
+  bankSection.style.breakBefore = "auto";
+
+  const pdfContentWidthMm = 210 - margins[1] - margins[3];
+  const pdfContentHeightMm = 297 - margins[0] - margins[2];
+  const rootWidth = root.getBoundingClientRect().width;
+
+  if (!rootWidth) return;
+
+  const pageHeightPx = (rootWidth / pdfContentWidthMm) * pdfContentHeightMm;
+  const overflowTolerance = 4;
+
+  const overflowsPage = (section: HTMLElement) => {
+    const sectionTopOnPage = section.offsetTop % pageHeightPx;
+    const sectionHeight = section.getBoundingClientRect().height;
+
+    return sectionTopOnPage + sectionHeight > pageHeightPx - overflowTolerance;
+  };
+
+  if (overflowsPage(amountSection)) {
+    amountSection.style.pageBreakBefore = "always";
+    amountSection.style.breakBefore = "page";
+    return;
+  }
+
+  if (overflowsPage(bankSection)) {
+    bankSection.style.pageBreakBefore = "always";
+    bankSection.style.breakBefore = "page";
+  }
 }
 
 export async function generateSalesOrderPdf(
@@ -398,14 +454,21 @@ export async function generateSalesOrderPdf(
   document.body.appendChild(container);
 
   const element = container.querySelector(".outer") || container;
+  const pdfMargins: [number, number, number, number] = [5, 5, 5, 5];
+
+  await waitForPdfImages(container);
+
+  if (element instanceof HTMLElement) {
+    applyFooterPageBreaks(element, pdfMargins);
+  }
 
   const opt = {
-    margin: [5, 5, 5, 5],
+    margin: pdfMargins,
     filename: `SalesOrder_${order.customerName.replace(/\s+/g, "_")}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, allowTaint: true, width: 920, windowWidth: 950 },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
-    pagebreak: { mode: ["css", "legacy"] },
+    pagebreak: { mode: ["css", "legacy"], avoid: ["tr", ".pdf-amount-section", ".pdf-bank-section"] },
   };
 
   const pdfBlob: Blob = await html2pdf().set(opt).from(element).outputPdf("blob");
