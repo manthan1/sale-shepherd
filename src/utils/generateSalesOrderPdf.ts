@@ -334,51 +334,43 @@ ${taxRowsHtml}
 
 </table>
 
-<div style="page-break-inside: avoid; break-inside: avoid;">
+<div style="page-break-inside: avoid; break-inside: avoid; display:block;">
 
-<table>
-<tr>
-<td width="70%">
+<div style="display:flex; margin-top:-1px; border:1px solid black; page-break-inside: avoid; break-inside: avoid;">
+<div style="width:70%; padding:6px 8px; border-right:1px solid black; box-sizing:border-box;">
 <b>Amount Chargeable (in words)</b><br>
 INR ${amountWords} Only
-</td>
-<td width="30%" class="right">
+</div>
+<div style="width:30%; padding:6px 8px; text-align:right; box-sizing:border-box;">
 E. & O.E
-</td>
-</tr>
-</table>
+</div>
+</div>
 
-<table>
-<tr>
-<td width="60%">
+<div style="display:flex; min-height:190px; border-left:1px solid black; border-right:1px solid black; border-bottom:1px solid black; page-break-inside: avoid; break-inside: avoid;">
+<div style="width:60%; padding:12px 10px; border-right:1px solid black; box-sizing:border-box;">
 <b>Company's Bank Details</b><br>
 A/c Holder's Name: <b>${company.bank_account_holder}</b><br>
 Bank Name: <b>${company.bank_name}</b><br>
 A/c No.: <b>${company.bank_account_no}</b><br>
 Branch & IFS Code: <b>${company.bank_ifsc}</b>
-</td>
+</div>
 
-<td width="40%" style="vertical-align:bottom; text-align:right; padding-right:15px;">
-    <div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:flex-end; height:100%;">
-        
-        <div style="font-weight:bold;">
-            for ${company.name}
-        </div>
+<div style="width:40%; padding:12px 15px; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; text-align:right; box-sizing:border-box;">
+<div style="font-weight:bold;">
+for ${company.name}
+</div>
 
-        <div style="margin:15px 0;">
-            ${signatureHtml}
-        </div>
+<div style="margin:15px 0;">
+${signatureHtml}
+</div>
 
-        <div style="font-weight:bold;">
-            Authorised Signatory
-        </div>
+<div style="font-weight:bold;">
+Authorised Signatory
+</div>
+</div>
+</div>
 
-    </div>
-</td>
-</tr>
-</table>
-
-<div style="text-align:center; font-size:10px; padding:5px;">
+<div style="border-left:1px solid black; border-right:1px solid black; border-bottom:1px solid black; text-align:center; font-size:10px; padding:5px;">
 This is a Computer Generated Document
 </div>
 
