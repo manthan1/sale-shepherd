@@ -334,6 +334,8 @@ ${taxRowsHtml}
 
 </table>
 
+<div style="page-break-inside: avoid; break-inside: avoid;">
+
 <table>
 <tr>
 <td width="70%">
@@ -373,10 +375,13 @@ Branch & IFS Code: <b>${company.bank_ifsc}</b>
 
     </div>
 </td>
-
+</tr>
+</table>
 
 <div style="text-align:center; font-size:10px; padding:5px;">
 This is a Computer Generated Document
+</div>
+
 </div>
 
 </div>
